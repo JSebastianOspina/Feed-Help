@@ -20,7 +20,7 @@ class CreateDecksTable extends Migration
             $table->tinyInteger('rt_number');
             $table->smallInteger('delete_minutes');
             $table->string('description');
-            $table->integer('followers');
+            $table->integer('followers')->default(0);
             $table->string('whatsapp_group_url')->nullable();
             $table->boolean('enabled')->default(true);
             $table->timestamps();

@@ -11,39 +11,34 @@ use App\User;
 use Artisan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 
 class DeckController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+
     public function index()
     {
+        $user = Auth::user();
+        if ($user->isOwner()) {
+            $decks = Deck::orderBy('followers', 'desc')->get();
+            $users = DB::table('users')->select(['name', 'id'])->get();
+            return view('panel.deck.decks', compact('decks', 'users'));
 
-        if (Auth::user()->hasRole(['Owner'])) {
-            $decks = Deck::orderBy('numero','desc')->get();
         } else {
-            $deckk = Decks_user::where('username', Auth::user()->username)->get();
-            $decks = array();
-            $contador = 0;
-            foreach ($deckk as $nombre) {
+            $decks = $user->decks();
+            return view('panel.deck.decks', compact('decks'));
 
-                array_push($decks, Deck::where('nombre', str_replace('_', ' ', $nombre->nombredeck))->first());
-            }
         }
 
-        return view('panel.deck.decks', compact('decks'));
     }
 
     public function disableDeck($deck)
     {
 
         if (
-            !(Auth::user()->hasRole(['admin-' . $deck])
-                or  Auth::user()->hasRole(['Owner']))
+        !(Auth::user()->hasRole(['admin-' . $deck])
+            or Auth::user()->hasRole(['Owner']))
         ) {
             return back()->with('error', 'Ya esta parchado =)!!! .i.');
         }
@@ -56,8 +51,8 @@ class DeckController extends Controller
     public function enableDeck($deck)
     {
         if (
-            !(Auth::user()->hasRole(['admin-' . $deck])
-                or  Auth::user()->hasRole(['Owner']))
+        !(Auth::user()->hasRole(['admin-' . $deck])
+            or Auth::user()->hasRole(['Owner']))
         ) {
             return back()->with('error', 'Ya esta parchado =)!!! .i.');
         }
@@ -84,45 +79,39 @@ class DeckController extends Controller
     }
 
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
+        if (!Auth::user()->isOwner()) {
+            abort(403);
+        }
         $validatedData = $request->validate([
-            'nombre' => 'required|unique:decks',
-            'admin' => 'required',
-            'descipcion' => 'required',
-
+            'name' => 'required|unique:decks',
+            'admin_id' => 'required|integer',
+            'description' => 'required',
+            'rt_number' => 'required|numeric',
+            'delete_minutes' => 'required|numeric',
         ]);
 
-        if (!Auth::user()->hasRole(['Owner'])) {
-            return back()->with('error', 'Ya esta parchado =)!!! .i.');
+        $deckAdmin = User::find($request->input('admin_id'));
+        if ($deckAdmin !== null) {
+            $deck = Deck::create([
+                'name' => $request->input('name'),
+                'owner_name' => $deckAdmin->name,
+                'rt_number' => $request->input('rt_number'),
+                'delete_minutes' => $request->input('delete_minutes'),
+                'description' => $request->input('description'),
+                'followers' => 0
+            ]);
+
+            //Assign permissions
+            $deckAdmin->decks()->attach($deck->id);
+
+            return back()->withErrors('Deck creado exitosamente');
         }
 
-        $usertemp = User::where('username', $request->input('admin'))->first();
-        if ($usertemp != null) {
-            $registro = new Deck;
-            $registro->nombre = $request->input('nombre');
-            $registro->admin = $request->input('admin');
-            $registro->descripcion = $request->input('descipcion');
-            $registro->rt = $request->input('rt');
-            $registro->save();
-            //crear los permisos
-            $role = Role::create(['name' => str_replace(' ', '_', $request->input('nombre'))]);
-            $role = Role::create(['name' => 'admin-' . str_replace(' ', '_', $request->input('nombre'))]);
-
-            $usertemp->assignRole("Admin");
-            $usertemp->assignRole('admin-' . str_replace(' ', '_', $request->input('nombre')));
-
-            return back();
-        } else {
-            return back()->withErrors('¡Cuidado! ese nombre de usuario no existe.');
-        }
+        return back()->withErrors('¡Cuidado! ese nombre de usuario no existe.');
     }
+
     public function consentido($username)
     {
         if (!Auth::user()->hasRole(['Owner'])) {
@@ -144,16 +133,18 @@ class DeckController extends Controller
         $usertemp->removeRole("consentido");
         return 'Eliminado con exito a el usuario: ' . $username;
     }
+
     public function verArquiler()
     {
         if (Auth::user()->hasRole(['Owner'])) {
             return Role::where('name', 'consentido')->first()->users()->get();
         }
     }
-    public function noticias()
+
+    public function news()
     {
-        $noticias = Noticia::latest()->get();
-        return view('panel.deck.noticias', compact('noticias'));
+        $news = DB::table('news')->latest()->get();
+        return view('panel.deck.noticias', compact('news'));
     }
 
     public function noticiasCrear(Request $request)
@@ -196,19 +187,20 @@ class DeckController extends Controller
             abort(403);
         }
     }
+
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
     { //$decks= DB::table('decks')->first()->where('nombre',str_replace('_',' ',$id));
 
         if (
-            !(Auth::user()->hasRole(['admin-' . $id])
-                or  Auth::user()->hasRole(['Owner']))
+        !(Auth::user()->hasRole(['admin-' . $id])
+            or Auth::user()->hasRole(['Owner']))
         ) {
             return back()->with('error', 'Ya esta parchado =)!!! .i.');
         }
@@ -231,8 +223,8 @@ class DeckController extends Controller
     public function newUser(Request $request, $id)
     {
         if (
-            !(Auth::user()->hasRole(['admin-' . $id])
-                or  Auth::user()->hasRole(['Owner']))
+        !(Auth::user()->hasRole(['admin-' . $id])
+            or Auth::user()->hasRole(['Owner']))
         ) {
             return back()->with('error', 'Ya esta parchado =)!!! .i.');
         }
@@ -257,8 +249,8 @@ class DeckController extends Controller
     {
 
         if (
-            !(Auth::user()->hasRole(['admin-' . $id])
-                or  Auth::user()->hasRole(['Owner']))
+        !(Auth::user()->hasRole(['admin-' . $id])
+            or Auth::user()->hasRole(['Owner']))
         ) {
             return back()->with('error', 'Ya esta parchado =)!!! .i.');
         }
@@ -281,14 +273,14 @@ class DeckController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function destroy($id)
     {
         if (
-            !(Auth::user()->hasRole(['admin-' . $id])
-                or  Auth::user()->hasRole(['Owner']))
+        !(Auth::user()->hasRole(['admin-' . $id])
+            or Auth::user()->hasRole(['Owner']))
         ) {
             return back()->with('error', 'Ya esta parchado =)!!! .i.');
         }
@@ -304,8 +296,8 @@ class DeckController extends Controller
     public function eliminarUser(Request $request)
     {
         if (
-            !(Auth::user()->hasRole(['admin-' . $request->input("deck-name")])
-                or  Auth::user()->hasRole(['Owner']))
+        !(Auth::user()->hasRole(['admin-' . $request->input("deck-name")])
+            or Auth::user()->hasRole(['Owner']))
         ) {
             return back()->with('error', 'Ya esta parchado =)!!! .i.');
         }
@@ -319,6 +311,7 @@ class DeckController extends Controller
 
         return back()->with('mensaje', 'Usuario con Twitter ' . $dale . ' eliminado exitosamente');
     }
+
     public function cache()
     {
 
@@ -348,6 +341,7 @@ class DeckController extends Controller
             return 'Good try campeon :*';
         }
     }
+
     public function getDecksFollowers()
     {
         $decks = Deck::all();

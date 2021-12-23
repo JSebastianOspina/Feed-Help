@@ -5,7 +5,10 @@ namespace App;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Spatie\Permission\Traits\HasRoles; //Añadimos libreria
+use Spatie\Permission\Traits\HasRoles;
+use App\Deck;
+
+//Añadimos libreria
 
 class User extends Authenticatable
 {
@@ -19,7 +22,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password','username',
+        'name', 'email', 'password', 'username',
     ];
 
     /**
@@ -39,4 +42,25 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function isOwner(): bool
+    {
+        return $this->role === 2;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 1;
+    }
+
+    public function admittedOnMaintenance(): bool
+    {
+        return ($this->isAdmin() || $this->isOwner());
+    }
+
+    public function decks()
+    {
+        return $this->belongsToMany(Deck::class);
+    }
+
 }

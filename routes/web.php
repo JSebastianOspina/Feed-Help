@@ -16,7 +16,7 @@ Route::get('decks/{id}/historial', 'DeckController@historial')->middleware('auth
 Route::get('decks/{id}/inspector/{unico}', 'DeckController@inspector')->middleware('auth','mantenimiento')->name('inspector');
 Route::get('decks/{id}/rate', 'twitter\TwitterController@limite')->middleware('auth','mantenimiento')->name('limite');
 
-Route::get('/', 'DeckController@noticias')->middleware('auth','mantenimiento');
+Route::get('/', 'DeckController@news')->middleware('auth','mantenimiento');
 Route::get('/asdf', 'DeckController@noticias')->middleware('mantenimiento');
 Route::view('mantenimiento-view', 'mantenimiento')->name('mantenimiento-view');
 
@@ -35,22 +35,22 @@ Route::post('panel.deck.admin/{id}','DeckController@newAdmin')->name('nuevoadmin
 
 Route::get('/twitter', 'twitter\TwitterController@index')->middleware('auth','mantenimiento')->name('twitter');
 Route::get('/callback', 'twitter\TwitterController@callback')->middleware('auth','mantenimiento');
-Route::post('/RT', 'twitter\TwitterController@darRT')->name('rt')->middleware('auth','mantenimiento'); 
+Route::post('/RT', 'twitter\TwitterController@darRT')->name('rt')->middleware('auth','mantenimiento');
 
 
-Route::post('/master', 'twitter\TwitterController@master')->name('master')->middleware('auth','mantenimiento'); 
+Route::post('/master', 'twitter\TwitterController@master')->name('master')->middleware('auth','mantenimiento');
 
-Route::get('/testrt', 'twitter\TwitterController@testrt')->name('testrt')->middleware('auth','mantenimiento'); 
-
-
-Route::post('/generar', 'twitter\TwitterController@generar')->name('generar')->middleware('auth','mantenimiento'); 
-Route::post('/generar1', 'twitter\TwitterController@generar1')->name('generar1')->middleware('auth','mantenimiento');  
-Route::post('/generar3', 'twitter\TwitterController@generar3')->name('generar3')->middleware('auth','mantenimiento');  
-
-Route::get('/reautorizar', 'twitter\TwitterController@reautorizar')->name('reautorizar')->middleware('auth','mantenimiento');  
+Route::get('/testrt', 'twitter\TwitterController@testrt')->name('testrt')->middleware('auth','mantenimiento');
 
 
-Route::post('panel.deck.eliminar-user/', 'DeckController@eliminarUser')->name('eliminar-user')->middleware('auth','mantenimiento');  
+Route::post('/generar', 'twitter\TwitterController@generar')->name('generar')->middleware('auth','mantenimiento');
+Route::post('/generar1', 'twitter\TwitterController@generar1')->name('generar1')->middleware('auth','mantenimiento');
+Route::post('/generar3', 'twitter\TwitterController@generar3')->name('generar3')->middleware('auth','mantenimiento');
+
+Route::get('/reautorizar', 'twitter\TwitterController@reautorizar')->name('reautorizar')->middleware('auth','mantenimiento');
+
+
+Route::post('panel.deck.eliminar-user/', 'DeckController@eliminarUser')->name('eliminar-user')->middleware('auth','mantenimiento');
 
 
 Route::get('/config-cache', 'DeckController@cache');

@@ -11,22 +11,27 @@ class Mantenimiento
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
+     * @param \Illuminate\Http\Request $request
+     * @param \Closure $next
      * @return mixed
      */
     public function handle($request, Closure $next)
     {
-        $estado = DB::table('mantenimiento')->first();
-        if ($estado->estado == 'activo') {
-            return $next($request);
-        } else {
-            if (Auth::user()->hasRole($estado->rango) || Auth::user()->hasRole('Owner')) {
-                return $next($request);
 
-            } else {
-                return redirect('mantenimiento-view');
-            }
+        $deckStatus = DB::table('systems')->first();
+        if (!$deckStatus) { //haven't run migrations, let them pass.
+            return $next($request);
         }
+        //It's not enabled
+        if ($deckStatus->enabled !== true) {
+            // lets check the user role
+            if (Auth::user()->admittedOnMaintenance()) {
+                return $next($request);
+            }
+            //not allowed, redirect to error route.
+            return redirect('mantenimiento-view');
+        }
+        //If enabled, let them pass
+        return $next($request);
     }
 }
