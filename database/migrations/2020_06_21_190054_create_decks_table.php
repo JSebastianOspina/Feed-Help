@@ -15,19 +15,14 @@ class CreateDecksTable extends Migration
     {
         Schema::create('decks', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre')->unique();
-            $table->string('admin');
-            $table->string('rt');
-            $table->string('descripcion');
-            $table->string('crearkey')->nullable();
-            $table->string('crearsecret')->nullable();
-            $table->string('borrarkey')->nullable();
-            $table->string('borrarsecret')->nullable();
-            $table->string('api3key')->nullable();
-            $table->string('api3secret')->nullable();
-            $table->string('numero')->nullable();
-            $table->string('whatsapp')->nullable();
-            $table->boolean('enabled');
+            $table->string('name')->unique();
+            $table->string('owner_name');
+            $table->tinyInteger('rt_number');
+            $table->smallInteger('delete_minutes');
+            $table->string('description');
+            $table->integer('followers');
+            $table->string('whatsapp_group_url')->nullable();
+            $table->boolean('enabled')->default(true);
             $table->timestamps();
         });
     }
