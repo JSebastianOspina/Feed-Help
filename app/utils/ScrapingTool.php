@@ -31,6 +31,8 @@ class ScrapingTool
     }
 
     public function makeRequest(){
+        $curlCobain = new CurlCobain($this->url);
+        $curlCobain->setQueryParam('url',urlencode($this->target));
 
     }
 
