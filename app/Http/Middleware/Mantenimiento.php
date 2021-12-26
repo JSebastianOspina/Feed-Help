@@ -23,7 +23,7 @@ class Mantenimiento
             return $next($request);
         }
         //It's not enabled
-        if ($deckStatus->enabled !== true) {
+        if ($deckStatus->status !== 'enabled') {
             // lets check the user role
             if (Auth::user()->admittedOnMaintenance()) {
                 return $next($request);

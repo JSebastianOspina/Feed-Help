@@ -216,24 +216,53 @@
             <!-- ============================================================== -->
             <!-- Start Page Content -->
             <!-- ============================================================== -->
-            <div class="row">
+            <div class="row justify-content-between align-items-center">
                 @if(auth()->user()->isOwner())
 
-                    <div class="col-12">
+                    <div class="col-2 ">
                         <button type="button" class="btn btn-primary btn-rounded mb-3 " data-toggle="modal"
                                 data-target="#apis"><i class="fas fa-bolt"></i> Crear noticia
                         </button>
-                        <a target="_blank" class="btn btn-success btn-rounded mb-3 "
-                           href="{{route('mantenimiento',['estado'=>'activo'])}}"><i class="fas fa-bolt"></i> Activar
-                            Deck</a>
 
-                        <a target="_blank" class="btn btn-warning btn-rounded mb-3 "
-                           href="{{route('mantenimiento',['estado'=>'mantenimiento','rango'=>'Admin'])}}"><i
-                                class="fas fa-bolt"></i> Desactivar (Admins admitidos)</a>
+                    </div>
+                    <div class="col-9 text-right">
+                        <div class="d-block mb-2">
+                            <span>Estado actual del Deck:</span>
 
-                        <a target="_blank" class="btn btn-danger btn-rounded mb-3 "
-                           href="{{route('mantenimiento',['estado'=>'mantenimiento'])}}"><i class="fas fa-bolt"></i>
-                            Desactivar (PARA TODOS) </a>
+                            <div style="height: 10px; width:10px; border-radius: 10px"
+                                 class="{{\App\System::getStatusColor($system->status)}} d-inline-block">
+                            </div>
+
+                            <span>
+                            {{$system->status}}
+
+                        </span>
+                        </div>
+
+                        <form action="{{route('updateOrCreateSystemStatus')}}" method="POST" class="d-inline-block">
+                            @csrf
+                            <input type="hidden" name="statusId" value="1">
+                            <button class="btn btn-success btn-rounded mb-3" type="submit">
+                                <i class="fas fa-bolt"></i> Activar Deck
+                            </button>
+
+                        </form>
+                        <form action="{{route('updateOrCreateSystemStatus')}}" method="POST" class="d-inline-block">
+                            @csrf
+                            <input type="hidden" name="statusId" value="2">
+                            <button class="btn btn-warning btn-rounded mb-3" type="submit">
+                                <i class="fas fa-bolt"></i> Desactivar (Admins admitidos)
+                            </button>
+
+                        </form>
+                        <form action="{{route('updateOrCreateSystemStatus')}}" method="POST" class="d-inline-block">
+                            @csrf
+                            <input type="hidden" name="statusId" value="0">
+                            <button class="btn btn-danger btn-rounded mb-3" type="submit">
+                                <i class="fas fa-bolt"></i> Desactivar (PARA TODOS)
+                            </button>
+                        </form>
+
                     </div>
 
                     <div id="apis" class="modal fade" tabindex="-1" role="dialog"
@@ -248,18 +277,18 @@
                                 </div>
                                 <div class="modal-body">
 
-                                    <form class="form-group" method="POST" action="{{route('noticias')}}">
+                                    <form class="form-group" method="POST" action="{{route('news.store')}}">
                                         @csrf
 
-                                        <label class="form-control-label" for="titulo">Titulo</label>
-                                        <input type="text" class="form-control" name="titulo" id="titulo">
+                                        <label class="form-control-label" for="title">Titulo</label>
+                                        <input type="text" class="form-control" name="title" id="title">
 
-                                        <label class="form-control-label" for="descripcion">Contenido</label>
-                                        <input type="text" class="form-control" name="descripcion" id="descripcion"
+                                        <label class="form-control-label" for="body">Contenido</label>
+                                        <input type="text" class="form-control" name="body" id="body"
                                         >
 
-                                        <label class="form-control-label" for="img">URL directa imagen</label>
-                                        <input type="text" class="form-control" name="img" id="img"
+                                        <label class="form-control-label" for="image_url">URL directa imagen</label>
+                                        <input type="text" class="form-control" name="image_url" id="image_url"
                                         >
 
 
@@ -279,14 +308,27 @@
                     <div class="col-sm-6">
 
                         <div class="card">
-                            <img class="card-img-top img-fluid" src="{{$noticia->img}}"
+                            <img class="card-img-top img-fluid" src="{{$new->image_url}}"
                                  alt="Card image cap">
 
                             <div class="card-body">
-                                <h4 class="card-title">{{$noticia->titulo}}</h4>
-                                <p class="card-text">{{$noticia->descripcion}}</p>
-                                <small class="text-muted">{{$noticia->updated_at}}</small>
+                                <h4 class="card-title">{{$new->title}}</h4>
+                                <p class="card-text">{{$new->body}}</p>
+                                <small class="text-muted">{{$new->updated_at}}</small>
                             </div>
+                            @if(auth()->user()->isOwner())
+
+                                <div class="card-footer">
+                                    <form action="{{route('news.delete',['id'=>$new->id])}}" method="POST"
+                                          class="text-center">
+                                        @csrf
+                                        @method('delete')
+                                        <button type="submit" class="btn btn-warning button-small">Eliminar
+                                            publicación
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
 
                         </div>
 

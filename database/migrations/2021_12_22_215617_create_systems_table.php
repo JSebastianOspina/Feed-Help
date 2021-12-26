@@ -15,7 +15,7 @@ class CreateSystemsTable extends Migration
     {
         Schema::create('systems', function (Blueprint $table) {
             $table->id();
-            $table->boolean('enabled')->default(true);
+            $table->enum('status',['enabled', 'disabled','only_admins']);
             $table->timestamps();
         });
     }

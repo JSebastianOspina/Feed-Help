@@ -7,6 +7,7 @@ use App\Deck;
 use App\Decks_user;
 use App\Noticia;
 use App\Rt;
+use App\System;
 use App\User;
 use Artisan;
 use Illuminate\Http\Request;
@@ -20,6 +21,7 @@ class DeckController extends Controller
     public function index()
     {
         $user = Auth::user();
+
         if ($user->isOwner()) {
             $decks = Deck::orderBy('followers', 'desc')->get();
             $users = DB::table('users')->select(['name', 'id'])->get();
@@ -139,22 +141,6 @@ class DeckController extends Controller
         if (Auth::user()->hasRole(['Owner'])) {
             return Role::where('name', 'consentido')->first()->users()->get();
         }
-    }
-
-    public function news()
-    {
-        $news = DB::table('news')->latest()->get();
-        return view('panel.deck.noticias', compact('news'));
-    }
-
-    public function noticiasCrear(Request $request)
-    {
-        $noticias = new Noticia;
-        $noticias->titulo = $request->input('titulo');
-        $noticias->descripcion = $request->input('descripcion');
-        $noticias->img = $request->input('img');
-        $noticias->save();
-        return back();
     }
 
     public function show($id)
@@ -315,31 +301,20 @@ class DeckController extends Controller
     public function cache()
     {
 
-        $exitCode = Artisan::call('config:clear');
-        $exitCode = Artisan::call('route:cache');
-        //$exitCode = Artisan::call('view:clear');
-        //  $exitCode = Artisan::call('cache:clear');
-        // $exitCode = Artisan::call('migrate:rollback --step=1');
-
-        // $exitCode = Artisan::call('migrate');
-
-
+        $exitCode = Artisan::call('optimize');
         return '<h1>Clear Config cleared</h1>';
     }
 
-    public function mantenimiento($estado, $rango = 'Owner')
+    public function updateOrCreateSystemStatus(Request $request)
     {
-
-        if (Auth::user()->hasRole('Owner')) {
-
-            $asdf = Mantenimiento::first();
-            $asdf->estado = $estado;
-            $asdf->rango = $rango;
-            $asdf->save();
-            return 'Estado: ' . $estado . '. Disponible para: ' . $rango;
-        } else {
-            return 'Good try campeon :*';
-        }
+            $statusName = System::getStatusName($request->input('statusId'));
+            $system_status = System::first();
+            if(!$system_status){
+                $system_status = new System ();
+            }
+            $system_status->status = $statusName;
+            $system_status->save();
+            return redirect()->route('news.index');
     }
 
     public function getDecksFollowers()
