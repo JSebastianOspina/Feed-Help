@@ -6,11 +6,11 @@ namespace App\utils;
 
 class ScrapingTool
 {
-    private $url = 'https://api.scrapingant.com/v1/general';
-    private $api_token = '4d7b4ce4bf7148afa33c9886716db9a8';
     public $target;
     public $headers = [];
     public $method;
+    private $url = 'https://api.scrapingant.com/v1/general';
+    private $api_token = '4d7b4ce4bf7148afa33c9886716db9a8';
     private $httpClient;
 
     public function __construct(string $target, $method = 'GET')
@@ -21,18 +21,28 @@ class ScrapingTool
         $this->setUpClient();
     }
 
-    private function setUpAuthorization()
+    private function setUpClient(): void
+    {
+        $this->httpClient->setQueryParam('url', $this->target);
+        $this->httpClient->setQueryParam('browser','false');
+        $this->httpClient->setQueryParam('return_text','true');
+        $this->setUpAuthorization();
+    }
+
+    private function setUpAuthorization(): void
     {
         $this->httpClient->setHeader('x-api-key', $this->api_token);
     }
 
-    public function setHttpClientHeader($headerName,$headerValue){
+    public function setHttpClientHeader($headerName, $headerValue): void
+    {
         $this->headers[] = [
             $headerName => $headerValue
         ];
-        $this->httpClient->setHeader($headerName,$headerValue);
+        $this->httpClient->setHeader($headerName, $headerValue);
     }
-    public function setMethod(string $method)
+
+    public function setMethod(string $method): void
     {
         $this->method = $method;
         $this->httpClient->setMethod($method);
@@ -40,14 +50,7 @@ class ScrapingTool
 
     public function makeRequest()
     {
-        $response = $this->httpClient->makeRequest();
-        dd($response);
-    }
-
-    private function setUpClient()
-    {
-        $this->httpClient->setQueryParam('url', urlencode($this->target));
-        $this->setUpAuthorization();
+        return $this->httpClient->makeRequest();
     }
 
 

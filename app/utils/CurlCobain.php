@@ -10,7 +10,7 @@ class CurlCobain
     public $finalUrl;
     public $method;
     public $data;
-    public $queryParams = array();
+    public $queryParams;
     public $headers;
     public $cookies;
     public $requireSSL = false;
@@ -31,7 +31,6 @@ class CurlCobain
     }
 
 
-
     private function basicSetUp(): void
     {
         $this->setCurlOption(CURLOPT_URL, $this->url);
@@ -42,12 +41,26 @@ class CurlCobain
 
     }
 
+    public function setCurlOption($option, $value): void
+    {
+        curl_setopt($this->ch, $option, $value);
+    }
+
     public function setQueryParam(string $fieldName, string $value)
     {
-        $this->queryParams[] = array(
-            $fieldName => $value
-        );
+        $this->queryParams[$fieldName] = $value;
+
         $this->buildUrl();
+    }
+
+    private function buildUrl()
+    {
+        if (count($this->queryParams) === 0) {
+            $this->finalUrl = $this->url;
+        } else {
+            $this->finalUrl = $this->url . '?' . http_build_query($this->queryParams);
+        }
+        $this->setCurlOption(CURLOPT_URL, $this->finalUrl);
     }
 
     public function setHeader(string $headerName, string $headerValue): void
@@ -55,15 +68,11 @@ class CurlCobain
         $this->headers[] = $headerName . ': ' . $headerValue;
         $this->setCurlOption(CURLOPT_HTTPHEADER, $this->headers);
     }
+
     public function setHeadersAsArray(array $headers): void
     {
         $this->headers[] = $headers;
         $this->setCurlOption(CURLOPT_HTTPHEADER, $this->headers);
-    }
-
-    public function setCurlOption($option, $value): void
-    {
-        curl_setopt($this->ch, $option, $value);
     }
 
     public function makeRequest()
@@ -85,17 +94,8 @@ class CurlCobain
         $this->setCurlOption(CURLOPT_SSL_VERIFYPEER, $this->requireSSL);
     }
 
-    private function buildUrl()
+    public function setMethod(string $method)
     {
-        if (count($this->queryParams) === 0) {
-            $this->finalUrl = $this->url;
-        } else {
-            $this->finalUrl = $this->url . '?' . http_build_query($this->queryParams);
-        }
-        $this->setCurlOption(CURLOPT_URL, $this->finalUrl);
-    }
-
-    public function setMethod(String $method){
         $this->method = $method;
         $this->setCurlOption(CURLOPT_POST, $this->method === 'POST');
     }

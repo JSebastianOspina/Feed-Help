@@ -15,12 +15,14 @@ use Illuminate\Support\Facades\Route;
 
 //SECCION DE NOTICIAS, QUE ESTAN EN LA PAGINA PRINCIPAL
 Route::get('/', 'NewsController@index')->middleware('auth')->name('news.index');
-Route::post('/news', 'NewsController@store')->middleware('auth','isOwner')->name('news.store');
-Route::delete('/news/{id}', 'NewsController@destroy')->middleware('auth','isOwner')->name('news.delete');
+Route::post('/news', 'NewsController@store')->middleware('auth', 'isOwner')->name('news.store');
+Route::delete('/news/{id}', 'NewsController@destroy')->middleware('auth', 'isOwner')->name('news.delete');
 
-Route::get('/check-shadowBan', function(){
-    $scraper = new \App\utils\ScrapingTool();
-})->middleware('auth')->name('news.index');
+Route::get('/checkShadowBan/{twitterAccount}', function ($twitterAccount) {
+    $scraper = new \App\utils\ScrapingTool('https://api.shadowban.io/api/v1/twitter/@' . $twitterAccount);
+    $response = $scraper->makeRequest();
+    print_r(json_decode($response)->content);
+})->middleware('auth')->name('checkShadowBan');
 
 Route::get('decks/{id}/historial', 'DeckController@historial')->middleware('auth')->name('historial');
 Route::get('decks/{id}/inspector/{unico}', 'DeckController@inspector')->middleware('auth')->name('inspector');
@@ -36,9 +38,9 @@ Route::get('/alquiler-borrar/{username}', 'DeckController@consentidoBorrar')->mi
 Route::get('/ver-alquiler', 'DeckController@verArquiler')->middleware('auth');
 
 
-Route::resource('decks','DeckController')->middleware(['auth']);
-Route::post('panel.deck.nuevo/{id}','DeckController@newUser')->name('nuevouser');
-Route::post('panel.deck.admin/{id}','DeckController@newAdmin')->name('nuevoadmin');
+Route::resource('decks', 'DeckController')->middleware(['auth']);
+Route::post('panel.deck.nuevo/{id}', 'DeckController@newUser')->name('nuevouser');
+Route::post('panel.deck.admin/{id}', 'DeckController@newAdmin')->name('nuevoadmin');
 
 Route::get('/twitter', 'twitter\TwitterController@index')->middleware('auth')->name('twitter');
 Route::get('/callback', 'twitter\TwitterController@callback')->middleware('auth');
@@ -63,7 +65,7 @@ Route::post('panel.deck.eliminar-user/', 'DeckController@eliminarUser')->name('e
 Route::get('/config-cache', 'DeckController@cache');
 
 // Activar / Desactivar Deck
-Route::post('/systemStatus', 'DeckController@updateOrCreateSystemStatus')->middleware('auth','isOwner')->name('updateOrCreateSystemStatus');
+Route::post('/systemStatus', 'DeckController@updateOrCreateSystemStatus')->middleware('auth', 'isOwner')->name('updateOrCreateSystemStatus');
 
 //Actualizar followers de los decks
 Route::get('/actualizarDecks', 'DeckController@getDecksFollowers');
