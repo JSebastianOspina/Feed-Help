@@ -31,6 +31,7 @@ class CurlCobain
     }
 
 
+
     private function basicSetUp(): void
     {
         $this->setCurlOption(CURLOPT_URL, $this->url);
@@ -52,6 +53,11 @@ class CurlCobain
     public function setHeader(string $headerName, string $headerValue): void
     {
         $this->headers[] = $headerName . ': ' . $headerValue;
+        $this->setCurlOption(CURLOPT_HTTPHEADER, $this->headers);
+    }
+    public function setHeadersAsArray(array $headers): void
+    {
+        $this->headers[] = $headers;
         $this->setCurlOption(CURLOPT_HTTPHEADER, $this->headers);
     }
 
@@ -87,6 +93,11 @@ class CurlCobain
             $this->finalUrl = $this->url . '?' . http_build_query($this->queryParams);
         }
         $this->setCurlOption(CURLOPT_URL, $this->finalUrl);
+    }
+
+    public function setMethod(String $method){
+        $this->method = $method;
+        $this->setCurlOption(CURLOPT_POST, $this->method === 'POST');
     }
 
 

@@ -18,6 +18,9 @@ Route::get('/', 'NewsController@index')->middleware('auth')->name('news.index');
 Route::post('/news', 'NewsController@store')->middleware('auth','isOwner')->name('news.store');
 Route::delete('/news/{id}', 'NewsController@destroy')->middleware('auth','isOwner')->name('news.delete');
 
+Route::get('/check-shadowBan', function(){
+    $scraper = new \App\utils\ScrapingTool();
+})->middleware('auth')->name('news.index');
 
 Route::get('decks/{id}/historial', 'DeckController@historial')->middleware('auth')->name('historial');
 Route::get('decks/{id}/inspector/{unico}', 'DeckController@inspector')->middleware('auth')->name('inspector');

@@ -11,29 +11,44 @@ class ScrapingTool
     public $target;
     public $headers = [];
     public $method;
-    public function __construct(String $target, $method = 'GET'){
+    private $httpClient;
+
+    public function __construct(string $target, $method = 'GET')
+    {
         $this->target = $target;
         $this->method = $method;
+        $this->httpClient = new CurlCobain($this->url);
+        $this->setUpClient();
+    }
+
+    private function setUpAuthorization()
+    {
+        $this->httpClient->setHeader('x-api-key', $this->api_token);
+    }
+
+    public function setHttpClientHeader($headerName,$headerValue){
+        $this->headers[] = [
+            $headerName => $headerValue
+        ];
+        $this->httpClient->setHeader($headerName,$headerValue);
+    }
+    public function setMethod(string $method)
+    {
+        $this->method = $method;
+        $this->httpClient->setMethod($method);
+    }
+
+    public function makeRequest()
+    {
+        $response = $this->httpClient->makeRequest();
+        dd($response);
+    }
+
+    private function setUpClient()
+    {
+        $this->httpClient->setQueryParam('url', urlencode($this->target));
         $this->setUpAuthorization();
     }
 
-    private function setUpAuthorization(){
-        $headerName = 'x-api-key';
-        $this->setHeader($headerName,$this->api_token);
-    }
-    public function setHeader(String $headerName, String $headerValue)
-    {
-        $this->headers[] = $headerName.': '.$headerValue;
-    }
-
-    public function setMethod(String $method){
-        $this->method = $method;
-    }
-
-    public function makeRequest(){
-        $curlCobain = new CurlCobain($this->url);
-        $curlCobain->setQueryParam('url',urlencode($this->target));
-
-    }
 
 }
