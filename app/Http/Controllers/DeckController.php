@@ -12,6 +12,8 @@ use Artisan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
 
 class DeckController extends Controller
@@ -146,25 +148,44 @@ class DeckController extends Controller
 
     public function show($id)
     {
-        //Get the actual user
-        $user = auth()->user();
+        //Check if the Deck exists
+        $deck = Deck::find($id);
+        if ($deck === null) {
+            abort(404);
+        }
+
         //Lets check if the user belongs to this deck.
+
+        $user = auth()->user();
         $deckInfo = $user->getDeckInfo($id);
         //If not belongs to it, abort the request.
         if ($deckInfo['hasPermission'] === false) {
             abort(403, 'No tienes permiso para acceder a este Deck. comunicate
             con el administrador si crees que se trata de un error');
         }
-        //The user has permission to access the deck, lets get its role.
+        //The user has permission, let's continue
+
+        $deckUsers = DB::table('deck_user')
+            ->select([
+                'u.username as userUsername',
+                't.username as twitterUsername', 't.followers as twitterFollowers', 't.status as twitterStatus','t.image_url',
+                'd.followers as deckFollowers', 'd.name as deckName', 'd.icon as deckIcon'
+            ])
+            ->where('deck_user.deck_id', $id)
+            ->join('decks AS d', 'deck_user.deck_id', '=', 'd.id')
+            ->join('users AS u', 'deck_user.user_id', '=', 'u.id')
+            ->leftJoin('twitter_accounts AS t', 'deck_user.twitter_account_id', '=', 't.id')
+            ->get()
+            ->sortBy('twitter_accounts.followers');
+
+        //If the user is owner or admin , lets
         $userRole = $deckInfo['role'];
+        if ($userRole === 'owner' || $userRole === 'admin') {
+            $users = DB::table('users')->select('name', 'id')->get();
+            return view('vuexy.decks.show', compact('deck', 'deckUsers','users'));
 
-        //Get all the deck information.
-        $deck = Deck::where('id', '=', $id)->with(['twitterAccounts', 'twitterAccounts.user'])->get()->sortBy('twitter_accounts.followers');
-        if ($deck === null) {
-            abort(404);
         }
-
-        return view('panel.deck.deck', compact('deck'));
+        return view('vuexy.decks.show', compact('deck','deckUsers'));
 
     }
 
@@ -200,28 +221,39 @@ class DeckController extends Controller
         return back();
     }
 
-    public function newUser(Request $request, $id)
+    public function newUser(Request $request, $deck_id)
     {
-        if (
-        !(Auth::user()->hasRole(['admin-' . $id])
-            or Auth::user()->hasRole(['Owner']))
-        ) {
-            return back()->with('error', 'Ya esta parchado =)!!! .i.');
+        //Check if the user can perform this action
+        $this->hasAdminPermissions($deck_id);
+        //Check if is asking for a valid role
+        Validator::make($request->all(), [
+            'role' => [
+                'required',
+                'string',
+                Rule::in(['admin', 'user']),
+            ],
+        ]);
+
+        $newUser = User::find($request->input('user_id'));
+        $deckRole = $newUser->getDeckInfo($deck_id);
+        //Check if the user already exist in the deck
+        if ($deckRole['hasPermission'] === true) {
+            return abort(403, 'El usuario ya pertenece al deck');
         }
 
-        $user = User::where('username', $request->input("username"))->first();
-        if (!($user == null)) {
+        $newUser->decks()->sync([$deck_id], ['role' => $request->input('role')]);
+        return back();
 
-            $registro = new Decks_user;
-            $registro->nombredeck = $id;
-            $registro->username = $request->input("username");
-            $registro->img = "";
-            $registro->save();
+    }
 
-            $user->assignRole($id);
-            return back();
-        } else {
-            return back()->with('error', '¡Cuidado! ese usuario no está registrado');
+    private function hasAdminPermissions($deck_id): void
+    {
+        $user = auth()->user();
+        $deckRole = $user->getDeckInfo($deck_id)['role'];
+
+        //If doesnt have the required role, return 403 error code
+        if (!($deckRole === "owner" || $deckRole === "admin")) {
+            abort('403');
         }
     }
 
@@ -254,7 +286,7 @@ class DeckController extends Controller
      * Remove the specified resource from storage.
      *
      * @param int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\ResphasAdminPermissionsonse
      */
     public function destroy($id)
     {

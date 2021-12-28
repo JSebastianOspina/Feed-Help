@@ -17,6 +17,7 @@ class CreateDeckUserTable extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('deck_id')->constrained()->onDelete('cascade');
+            $table->foreignId('twitter_account_id')->nullable()->constrained()->onDelete('cascade');
             $table->enum('role', ['user', 'admin', 'owner']);
             $table->timestamps();
         });

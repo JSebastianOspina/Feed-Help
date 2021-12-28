@@ -18,6 +18,7 @@ class CreateTwitterAccountsTable extends Migration
             $table->string('username');
             $table->mediumInteger('followers');
             $table->string('image_url');
+            $table->enum('status', ['pending', 'incomplete', 'active']);
             $table->foreignId('deck_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();

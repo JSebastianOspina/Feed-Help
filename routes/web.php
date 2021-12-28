@@ -20,10 +20,14 @@ Route::delete('/news/{id}', 'NewsController@destroy')->middleware('auth', 'isOwn
 
 //Resource deck, crear, editar, actualizar, borrar
 Route::resource('decks', 'DeckController')->middleware(['auth']);
+/* ---------------GESTIÓN INDIVIDUAL DEL DECK---------------- */
+//Añadir usuario al deck
+Route::post('decks/{deck_id}/twitter_account', 'DeckController@newUser')->name('decks.twitterAccounts.store');
+Route::post('panel.deck.admin/{id}', 'DeckController@newAdmin')->name('nuevoadmin');
 
 
 Route::get('/theme', function () {
-  return view('vuexy.decks.index');
+    return view('vuexy.decks.index');
 });
 
 Route::get('/checkShadowBan/{twitterAccount}', function ($twitterAccount) {
@@ -45,9 +49,6 @@ Route::get('/alquiler/{username}', 'DeckController@consentido')->middleware('aut
 Route::get('/alquiler-borrar/{username}', 'DeckController@consentidoBorrar')->middleware('auth');
 Route::get('/ver-alquiler', 'DeckController@verArquiler')->middleware('auth');
 
-
-Route::post('panel.deck.nuevo/{id}', 'DeckController@newUser')->name('nuevouser');
-Route::post('panel.deck.admin/{id}', 'DeckController@newAdmin')->name('nuevoadmin');
 
 Route::get('/twitter', 'twitter\TwitterController@index')->middleware('auth')->name('twitter');
 Route::get('/callback', 'twitter\TwitterController@callback')->middleware('auth');
