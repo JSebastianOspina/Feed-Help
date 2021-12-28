@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Api;
 use App\Deck;
-use App\Decks_user;
 use App\Rt;
 use App\System;
 use App\TwitterAccount;
@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
+use function unserialize;
 
 class DeckController extends Controller
 {
@@ -32,6 +33,112 @@ class DeckController extends Controller
         $decks = $user->decks;
         return view('vuexy.decks.index', compact('decks'));
 
+    }
+
+    public function edit($deckId)
+    {
+        $deck = Deck::find($deckId)->with(['twitterAccounts', 'apis'])->first();
+        return view('vuexy.decks.admin', compact('deck'));
+    }
+
+    public function store(Request $request)
+    {
+        if (!Auth::user()->isOwner()) {
+            abort(403);
+        }
+        $validatedData = $request->validate([
+            'icon' => 'required',
+            'name' => 'required|unique:decks',
+            'admin_id' => 'required|integer',
+            'rt_number' => 'required|numeric',
+            'delete_minutes' => 'required|numeric',
+        ]);
+
+        $deckAdmin = User::find($request->input('admin_id'));
+        if ($deckAdmin !== null) {
+            $deck = Deck::create([
+                'name' => $request->input('name'),
+                'icon' => $request->input('icon'),
+                'owner_name' => $deckAdmin->name,
+                'rt_number' => $request->input('rt_number'),
+                'delete_minutes' => $request->input('delete_minutes'),
+                'followers' => 0,
+                'enabled' => 1
+            ]);
+
+            //Assign permissions
+            $deckAdmin->decks()->attach($deck->id, ['role' => 'owner']);
+
+            return back()->withErrors('Deck creado exitosamente');
+        }
+
+        return back()->withErrors('¡Cuidado! ese nombre de usuario no existe.');
+    }
+
+    public function storeApi(Request $request, $deckId)
+    {
+        //Check if the user can not perform the action
+        $this->hasOwnerPermissions($deckId);
+        //Validate the request
+        $validatedData = $request->validate([
+            'name' => 'required|string|min:1',
+            'key' => 'required|string|min:15',
+            'secret' => 'required|string|min:15',
+            'type' => 'required|string',
+            'deck_id' => [
+                'required',
+                Rule::in([$deckId])
+            ]
+        ]);
+
+        $api = Api::create($request->all());
+
+        return redirect()->route('decks.edit', ['deck' => $deckId]);
+    }
+
+    private function hasOwnerPermissions($deck_id): void
+    {
+        $user = auth()->user();
+        $deckRole = $user->getDeckInfo($deck_id)['role'];
+
+        //If doesnt have the required role, return 403 error code
+        if (!($deckRole === "owner")) {
+            abort('403');
+        }
+    }
+
+    public function updateApi(Request $request, $deckId, $apiId)
+    {
+        //Check if the user can not perform the action
+        $this->hasOwnerPermissions($deckId);
+        //Validate the request
+        $validatedData = $request->validate([
+            'name' => 'required|string|min:1',
+            'key' => 'required|string|min:15',
+            'secret' => 'required|string|min:15',
+            'type' => 'required|string',
+
+        ]);
+
+        $api = Api::findOrFail($apiId);
+        $api->fill($request->all());
+        $api->save();
+
+
+        return redirect()->route('decks.edit', ['deck' => $deckId]);
+    }
+
+    public function deleteApi($deckId, $apiId)
+    {
+        //Check if the user can not perform the action
+        $this->hasOwnerPermissions($deckId);
+        //Validate the request
+        $api = Api::find($apiId);
+        if ($api === null) {
+            abort(404);
+        }
+        $api->delete();
+        return redirect()->route('decks.edit', ['deck' => $deckId]);
     }
 
     public function disableDeck($deck)
@@ -75,45 +182,8 @@ class DeckController extends Controller
         $histo = Rt::find($unico);
         $o = [];
         $h = "1277402467278430208";
-        $o = \unserialize($histo->quienes);
+        $o = unserialize($histo->quienes);
         return view('panel.deck.inspector', compact('o', 'id', 'h'));
-    }
-
-
-    public function store(Request $request)
-    {
-        if (!Auth::user()->isOwner()) {
-            abort(403);
-        }
-        $validatedData = $request->validate([
-            'icon' => 'required',
-            'name' => 'required|unique:decks',
-            'admin_id' => 'required|integer',
-            'description' => 'required',
-            'rt_number' => 'required|numeric',
-            'delete_minutes' => 'required|numeric',
-        ]);
-
-        $deckAdmin = User::find($request->input('admin_id'));
-        if ($deckAdmin !== null) {
-            $deck = Deck::create([
-                'name' => $request->input('name'),
-                'icon' => $request->input('icon'),
-                'owner_name' => $deckAdmin->name,
-                'rt_number' => $request->input('rt_number'),
-                'delete_minutes' => $request->input('delete_minutes'),
-                'description' => $request->input('description'),
-                'followers' => 0,
-                'enabled' => 1
-            ]);
-
-            //Assign permissions
-            $deckAdmin->decks()->attach($deck->id, ['role' => 'owner']);
-
-            return back()->withErrors('Deck creado exitosamente');
-        }
-
-        return back()->withErrors('¡Cuidado! ese nombre de usuario no existe.');
     }
 
     public function consentido($username)
@@ -185,36 +255,30 @@ class DeckController extends Controller
 
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @param int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    { //$decks= DB::table('decks')->first()->where('nombre',str_replace('_',' ',$id));
+    public function update(Request $request, $deckId)
+    {
+        $requestedData = $request->all();
 
-        if (
-        !(Auth::user()->hasRole(['admin-' . $id])
-            or Auth::user()->hasRole(['Owner']))
-        ) {
-            return back()->with('error', 'Ya esta parchado =)!!! .i.');
+        $this->hasOwnerPermissions($deckId);
+        //Validate the request
+        $validatedData = $request->validate([
+            'whatsapp_group_url' => 'required|string',
+            'telegram_username' => 'nullable|string',
+            'rt_number' => 'required|numeric|min:1|max:2',
+            'delete_minutes' => 'required|numeric|min:10',
+            'min_followers' => 'required|numeric|min:0',
+            'enabled' => 'required|boolean',
+        ]);
+
+        $deck = Deck::findOrFail($deckId);
+        if (array_key_exists('isPublic', $requestedData)) {
+            $requestedData['isPublic'] = true;
+        } else {
+            $requestedData['isPublic'] = false;
         }
-        $deck = Deck::where('nombre', str_replace('_', ' ', $id))->first();
-
-        $deck->crearkey = $request->input('key1');
-        $deck->crearsecret = $request->input('secret1');
-        $deck->borrarkey = $request->input('key2');
-        $deck->borrarsecret = $request->input('secret2');
-        if ($request->input('key3') != "" && $request->input('secret3') != "") {
-            $deck->api3key = $request->input('key3');
-            $deck->api3secret = $request->input('secret3');
-        }
-        $deck->whatsapp = $request->input('whatsapp');
-
+        $deck->fill($requestedData);
         $deck->save();
-        return back();
+        return redirect()->route('decks.edit', ['deck' => $deckId]);
     }
 
     public function newUser(Request $request, $deckId)
@@ -251,7 +315,6 @@ class DeckController extends Controller
             abort('403');
         }
     }
-
 
     public function deleteUser($deckId, $userId)
     {
@@ -306,7 +369,7 @@ class DeckController extends Controller
      * Remove the specified resource from storage.
      *
      * @param int $id
-     * @return \Illuminate\Http\ResphasAdminPermissionsonse
+     * @return ResphasAdminPermissionsonse
      */
     public function destroy($id)
     {

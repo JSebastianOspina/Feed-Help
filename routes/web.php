@@ -21,15 +21,22 @@ Route::delete('/news/{id}', 'NewsController@destroy')->middleware('auth', 'isOwn
 //Resource deck, crear, editar, actualizar, borrar
 Route::resource('decks', 'DeckController')->middleware(['auth']);
 /* ---------------GESTIÓN INDIVIDUAL DEL DECK---------------- */
-//Añadir usuario al deck
 
+//Añadir usuario al deck
 Route::post('decks/{deckId}/users', 'DeckController@newUser')->middleware('auth')->name('decks.users.store');
+//Borrar usuario del deck
 Route::delete('decks/{deckId}/user/{userId}', 'DeckController@deleteUser')->middleware('auth')->name('decks.users.delete');
+
+//Administración del Deck (APIS)
+Route::post('decks/{deckId}/apis', 'DeckController@storeApi')->middleware('auth')->name('decks.apis.store');
+Route::patch('decks/{deckId}/apis/{apiId}', 'DeckController@updateApi')->middleware('auth')->name('decks.apis.patch');
+Route::delete('decks/{deckId}/apis/{apiId}', 'DeckController@deleteApi')->middleware('auth')->name('decks.apis.delete');
+
 
 Route::get('/testapi', 'twitter\TwitterController@buildAuthorizeURL');
 
 Route::get('/theme', function () {
-    return view('vuexy.decks.index');
+    return view('vuexy.decks.admin');
 });
 
 Route::get('/checkShadowBan/{twitterAccount}', function ($twitterAccount) {

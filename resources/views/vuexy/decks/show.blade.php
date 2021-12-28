@@ -4,24 +4,38 @@
     <!-- Basic Tables start -->
     <div class="row" id="basic-table">
         <div class="col-12">
+            <div class="d-flex justify-content-end " style="margin-bottom: 15px">
+
+                <a class="btn btn-primary btn-sm" href="{{route('decks.edit',['deck'=>$deck->id])}}">
+                    <i data-feather="settings"></i>
+                    <span>Gestionar deck</span>
+                </a>
+            </div>
             <div class="card">
                 <div class="card-header">
-                    <h4 class="card-title">Deck: {{$deck->icon}} {{$deck->name}}</h4>
+                    <div class="d-flex justify-content-between w-100">
+
+                        <h4 class="card-title">Deck: {{$deck->icon}} {{$deck->name}}</h4>
+                        @if(auth()->user()->isOwner())
+                            <div>
+                                <button type="button" class="btn btn-primary btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#addUserModal">
+                                    <i data-feather="user-plus"></i>
+                                    Agregar usuario
+                                </button>
+                            </div>
+
+
+                        @endif
+                    </div>
+
                 </div>
                 <div class="card-body">
                     <p class="card-text">
                         Número total de seguidores: {{$deck->followers}}
                     </p>
-                    @if(auth()->user()->isOwner())
 
-                        <div class="d-flex justify-content-end ">
-                            <button type="button" class="btn btn-primary waves-effect waves-float waves-light"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#addUserModal">
-                                Agregar usuario
-                            </button>
-                        </div>
-                    @endif
                 </div>
 
 

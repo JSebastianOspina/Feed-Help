@@ -46,8 +46,6 @@
                             @csrf
                             <label class="form-control-label" for="nombre">Nombre del deck</label>
                             <input type="text" class="form-control" name="name" id="name">
-                            <label class="form-control-label" for="description">Descipcion del deck</label>
-                            <input type="text" class="form-control" name="description" id="description">
                             <label class="form-control-label" for="admin_id">Administrador</label>
                             <select class="form-select form-control"
                                     id="admin_id" name="admin_id">

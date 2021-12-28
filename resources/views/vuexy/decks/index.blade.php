@@ -31,23 +31,22 @@
                             <thead>
                             <tr>
                                 <th>Nombre</th>
-                                <th>Creador</th>
-                                <th>Descripción</th>
                                 <th>Estado</th>
                                 <th>Seguidores</th>
-                                <th>Usuarios</th>
+                                <th>RT/H</th>
+                                <th>Minutos para borrado</th>
+                                <th>Administrador</th>
+
                             </tr>
                             </thead>
                             <tbody>
                             @foreach($decks as $deck)
                                 <tr onclick="window.location.href = '{{route('decks.show',['deck'=>$deck->id])}}'"
-                                class="cursor-pointer">
+                                    class="cursor-pointer">
                                     <td>
                                         <span class="me-2">{{$deck->icon}}</span>
                                         <span class="fw-bold">{{$deck->name}}</span>
                                     </td>
-                                    <td>{{$deck->owner_name}}</td>
-                                    <td>{{$deck->description}}</td>
                                     <td>
                                         @if($deck->enabled === 1)
                                             <span class="badge rounded-pill badge-light-primary me-1">Activo</span>
@@ -56,8 +55,11 @@
                                         @endif
                                     </td>
                                     <td>{{$deck->followers}}</td>
+                                    <td>{{$deck->rt_number}}</td>
+                                    <td>{{$deck->delete_minutes}}</td>
+                                    <td>{{$deck->owner_name}}</td>
 
-                                    <td>
+<!--                                    <td>
                                         <div class="avatar-group">
                                             <div data-bs-toggle="tooltip" data-popup="tooltip-custom"
                                                  data-bs-placement="top"
@@ -84,7 +86,7 @@
                                                     height="26" width="26"/>
                                             </div>
                                         </div>
-                                    </td>
+                                    </td>-->
                                 </tr>
                             @endforeach
 
@@ -122,11 +124,6 @@
                             <div class="col-12">
                                 <label class="form-label" for="name">Nombre del deck</label>
                                 <input type="text" class="form-control" name="name" id="name">
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label" for="description">Descipcion del deck</label>
-                                <input type="text" class="form-control" name="description" id="description">
                             </div>
 
                             <div class="col-12">

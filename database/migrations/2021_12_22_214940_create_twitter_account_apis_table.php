@@ -17,6 +17,7 @@ class CreateTwitterAccountApisTable extends Migration
             $table->id();
             $table->string('key');
             $table->string('secret');
+            $table->boolean('isActive')->default(true);
             $table->foreignId('twitter_account_id')->constrained()->onDelete('cascade');
             $table->foreignId('api_id')->constrained()->onDelete('cascade');
             $table->timestamps();

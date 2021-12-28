@@ -18,6 +18,7 @@ class CreateApisTable extends Migration
             $table->string('name');
             $table->string('key');
             $table->string('secret');
+            $table->enum('type', ['rt', 'delete']);
             $table->foreignId('deck_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });

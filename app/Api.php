@@ -28,6 +28,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Api extends Model
 {
+    protected $guarded = [];
+
     public function deck()
     {
         return $this->belongsTo(Deck::class);
