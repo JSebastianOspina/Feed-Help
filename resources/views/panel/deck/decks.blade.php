@@ -29,10 +29,7 @@
                     data-target="#darrt"><i class="fas fa-check"></i>M A S T E R - R T
             </button>
 
-
         </div>
-
-
 
         <div id="primary-header-modal" class="modal fade" tabindex="-1" role="dialog"
              aria-labelledby="primary-header-modalLabel" aria-hidden="true">

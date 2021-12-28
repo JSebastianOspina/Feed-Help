@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Mantenimiento;
 use App\Deck;
 use App\Decks_user;
-use App\Noticia;
+use App\Mantenimiento;
 use App\Rt;
 use App\System;
 use App\User;
@@ -25,13 +24,12 @@ class DeckController extends Controller
         if ($user->isOwner()) {
             $decks = Deck::orderBy('followers', 'desc')->get();
             $users = DB::table('users')->select(['name', 'id'])->get();
-            return view('panel.deck.decks', compact('decks', 'users'));
-
-        } else {
-            $decks = $user->decks();
-            return view('panel.deck.decks', compact('decks'));
+            return view('vuexy.decks.index', compact('decks', 'users'));
 
         }
+
+        $decks = $user->decks;
+        return view('vuexy.decks.index', compact('decks'));
 
     }
 
@@ -87,6 +85,7 @@ class DeckController extends Controller
             abort(403);
         }
         $validatedData = $request->validate([
+            'icon' => 'required',
             'name' => 'required|unique:decks',
             'admin_id' => 'required|integer',
             'description' => 'required',
@@ -98,15 +97,17 @@ class DeckController extends Controller
         if ($deckAdmin !== null) {
             $deck = Deck::create([
                 'name' => $request->input('name'),
+                'icon' => $request->input('icon'),
                 'owner_name' => $deckAdmin->name,
                 'rt_number' => $request->input('rt_number'),
                 'delete_minutes' => $request->input('delete_minutes'),
                 'description' => $request->input('description'),
-                'followers' => 0
+                'followers' => 0,
+                'enabled' => 1
             ]);
 
             //Assign permissions
-            $deckAdmin->decks()->attach($deck->id);
+            $deckAdmin->decks()->attach($deck->id, ['role' => 'owner']);
 
             return back()->withErrors('Deck creado exitosamente');
         }
@@ -145,33 +146,26 @@ class DeckController extends Controller
 
     public function show($id)
     {
-
-        $decks = Decks_user::where('nombredeck', $id)->orderBy('followers', 'desc')->get();
-
-        if (Auth::user()->hasRole(['Owner', $id, 'admin-' . $id])) {
-            $contador = 0;
-            foreach ($decks as $v) {
-                $contador += $v->followers;
-            }
-            session(['nombredeck' => $id]); //guardamos
-            $cred = Deck::where('nombre', str_replace('_', ' ', $id))->first();
-
-            // Check if deck is disabled or not
-            if (!$cred->enabled && !Auth::user()->hasRole(['Owner', 'admin-' . $id])) return view('panel.deck.mantenimiento');
-            $alv = User::role('admin-' . $id)->get();
-            $vipss = User::role('consentido')->get();
-            $admins = [];
-            foreach ($alv as $aux) {
-                $admins[] = $aux->username;
-            }
-            $vips = [];
-            foreach ($vipss as $vip) {
-                $vips[] = $vip->username;
-            }
-            return view('panel.deck.deck', compact('decks', 'id', 'cred', 'contador', 'admins', 'vips'));
-        } else {
-            abort(403);
+        //Get the actual user
+        $user = auth()->user();
+        //Lets check if the user belongs to this deck.
+        $deckInfo = $user->getDeckInfo($id);
+        //If not belongs to it, abort the request.
+        if ($deckInfo['hasPermission'] === false) {
+            abort(403, 'No tienes permiso para acceder a este Deck. comunicate
+            con el administrador si crees que se trata de un error');
         }
+        //The user has permission to access the deck, lets get its role.
+        $userRole = $deckInfo['role'];
+
+        //Get all the deck information.
+        $deck = Deck::where('id', '=', $id)->with(['twitterAccounts', 'twitterAccounts.user'])->get()->sortBy('twitter_accounts.followers');
+        if ($deck === null) {
+            abort(404);
+        }
+
+        return view('panel.deck.deck', compact('deck'));
+
     }
 
     /**
@@ -307,14 +301,14 @@ class DeckController extends Controller
 
     public function updateOrCreateSystemStatus(Request $request)
     {
-            $statusName = System::getStatusName($request->input('statusId'));
-            $system_status = System::first();
-            if(!$system_status){
-                $system_status = new System ();
-            }
-            $system_status->status = $statusName;
-            $system_status->save();
-            return redirect()->route('news.index');
+        $statusName = System::getStatusName($request->input('statusId'));
+        $system_status = System::first();
+        if (!$system_status) {
+            $system_status = new System ();
+        }
+        $system_status->status = $statusName;
+        $system_status->save();
+        return redirect()->route('news.index');
     }
 
     public function getDecksFollowers()

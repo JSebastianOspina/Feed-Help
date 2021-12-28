@@ -284,12 +284,10 @@
                                         <input type="text" class="form-control" name="title" id="title">
 
                                         <label class="form-control-label" for="body">Contenido</label>
-                                        <input type="text" class="form-control" name="body" id="body"
-                                        >
+                                        <input type="text" class="form-control" name="body" id="body">
 
                                         <label class="form-control-label" for="image_url">URL directa imagen</label>
-                                        <input type="text" class="form-control" name="image_url" id="image_url"
-                                        >
+                                        <input type="text" class="form-control" name="image_url" id="image_url">
 
 
                                 </div>

@@ -18,6 +18,14 @@ Route::get('/', 'NewsController@index')->middleware('auth')->name('news.index');
 Route::post('/news', 'NewsController@store')->middleware('auth', 'isOwner')->name('news.store');
 Route::delete('/news/{id}', 'NewsController@destroy')->middleware('auth', 'isOwner')->name('news.delete');
 
+//Resource deck, crear, editar, actualizar, borrar
+Route::resource('decks', 'DeckController')->middleware(['auth']);
+
+
+Route::get('/theme', function () {
+  return view('vuexy.decks.index');
+});
+
 Route::get('/checkShadowBan/{twitterAccount}', function ($twitterAccount) {
     $scraper = new \App\utils\ScrapingTool('https://api.shadowban.io/api/v1/twitter/@' . $twitterAccount);
     $response = $scraper->makeRequest();
@@ -38,7 +46,6 @@ Route::get('/alquiler-borrar/{username}', 'DeckController@consentidoBorrar')->mi
 Route::get('/ver-alquiler', 'DeckController@verArquiler')->middleware('auth');
 
 
-Route::resource('decks', 'DeckController')->middleware(['auth']);
 Route::post('panel.deck.nuevo/{id}', 'DeckController@newUser')->name('nuevouser');
 Route::post('panel.deck.admin/{id}', 'DeckController@newAdmin')->name('nuevoadmin');
 

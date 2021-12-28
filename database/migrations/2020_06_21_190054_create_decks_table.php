@@ -16,6 +16,7 @@ class CreateDecksTable extends Migration
         Schema::create('decks', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
+            $table->string('icon')->nullable();
             $table->string('owner_name');
             $table->tinyInteger('rt_number');
             $table->smallInteger('delete_minutes');

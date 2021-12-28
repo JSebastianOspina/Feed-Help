@@ -2,11 +2,10 @@
 
 namespace App;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Traits\HasRoles;
-use App\Deck;
 
 //Añadimos libreria
 
@@ -43,9 +42,9 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function isOwner(): bool
+    public function admittedOnMaintenance(): bool
     {
-        return $this->role === 2;
+        return ($this->isAdmin() || $this->isOwner());
     }
 
     public function isAdmin(): bool
@@ -53,14 +52,40 @@ class User extends Authenticatable
         return $this->role === 1;
     }
 
-    public function admittedOnMaintenance(): bool
+    public function isOwner(): bool
     {
-        return ($this->isAdmin() || $this->isOwner());
+        return $this->role === 2;
     }
 
     public function decks()
     {
         return $this->belongsToMany(Deck::class);
+    }
+
+    public function twitterAccounts()
+    {
+        return $this->hasMany(TwitterAccount::class);
+    }
+
+    public function getDeckInfo($deckId): array
+    {
+        $deckUser = DB::table('deck_user')
+            ->where('user_id', '=', $this->id)
+            ->where('deck_id', '=', $deckId)
+            ->first();
+
+        if ($deckUser === null) {
+            return [
+                'role' => null,
+                'hasPermission' => false,
+            ];
+        }
+        return [
+            'role' => $deckUser->role,
+            'hasPermission' => true,
+        ];
+
+
     }
 
 }

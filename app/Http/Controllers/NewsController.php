@@ -19,7 +19,7 @@ class NewsController extends Controller
                 'status' => 'enabled'
             ];
         }
-        return view('panel.deck.noticias', compact('news','system'));
+        return view('vuexy.news.index', compact('news','system'));
     }
 
     public function store(Request $request)
