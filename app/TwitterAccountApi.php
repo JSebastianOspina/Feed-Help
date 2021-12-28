@@ -26,5 +26,10 @@ use Illuminate\Database\Eloquent\Model;
  */
 class TwitterAccountApi extends Model
 {
-    //
+    protected $guarded = [];
+
+    public function twitterAccount()
+    {
+        return $this->belongsTo(TwitterAccount::class);
+    }
 }

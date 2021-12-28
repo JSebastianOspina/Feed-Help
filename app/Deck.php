@@ -55,4 +55,10 @@ class Deck extends Model
         return $this->hasMany(TwitterAccount::class);
 
     }
+
+    public function apis()
+    {
+        return $this->hasMany(Api::class);
+
+    }
 }

@@ -3,155 +3,155 @@
 namespace App\Http\Controllers\twitter;
 
 use Abraham\TwitterOAuth\TwitterOAuth;
-
-require 'twitteroauth/autoload.php';
-
+use App\Api;
 use App\Blockeduser;
 use App\Deck;
 use App\Decks_user;
+use App\DeckUser;
 use App\Http\Controllers\Controller;
 use App\Rt;
+use App\TwitterAccount;
+use App\TwitterAccountApi;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+require 'twitteroauth/autoload.php';
+
 class TwitterController extends Controller
 {
 
-    public function generar(Request $request)
+    public function buildAuthorizeURL(Request $request)
     {
+        $api = Api::find($request->input('apiId'));
+        //Check if api exist
+        if ($api === null) {
+            abort(404);
+        }
+        //Save the API ID for beign able to remember the tokens.
+        session(['apiId' => $api->id]);
 
-        $deck = Deck::where('nombre', str_replace('_', ' ', $request->input('deckname')))->first();
-        $consumer_key = $deck->crearkey;
-        $consumer_secret = $deck->crearsecret;
+        //check if user is cheating
+        $deck = $api->deck;
+        if ($deck->id != $request->input('deckId')) {
+            abort(403);
+        }
 
-        session(['deckname' => str_replace('_', ' ', $request->input('deckname'))]);
-        session(['cual' => 'api1']);
-        $callback = "https://www.feed-help.de/callback";
-        define('CONSUMER_KEY', $consumer_key);
-        define('CONSUMER_SECRET', $consumer_secret);
-        define('OAUTH_CALLBACK', $callback);
+        $OAUTH_CALLBACK = "http://127.0.0.1:8000/callback";
+        //Create Twitter App Instance
+        $connection = new TwitterOAuth($api->key, $api->secret);
 
-        $connection = new TwitterOAuth(CONSUMER_KEY, CONSUMER_SECRET);
+        //Generate oauth_token
+        $request_token = $connection->oauth('oauth/request_token', array('oauth_callback' => $OAUTH_CALLBACK));
 
-        $request_token = $connection->oauth('oauth/request_token', array('oauth_callback' => OAUTH_CALLBACK));
-
+        //Save oauth_token and oauth_token_secret for authenticating the request later
         session(['oauth_token' => $request_token['oauth_token']]);
         session(['oauth_token_secret' => $request_token['oauth_token_secret']]);
 
+        //Generate authentication url
         $url = $connection->url('oauth/authorize', array('oauth_token' => $request_token['oauth_token']));
         return redirect($url);
     }
-
-    public function generar1(Request $request)
-    {
-
-        $aux = Deck::where('nombre', str_replace('_', ' ', $request->input('deckname')))->first();
-        session(['cual' => 'api2']);
-
-        $consumer_key = $aux->borrarkey;
-        $consumer_secret = $aux->borrarsecret;
-        $callback = "https://www.feed-help.de/callback";
-        define('CONSUMER_KEY', $consumer_key);
-        define('CONSUMER_SECRET', $consumer_secret);
-        define('OAUTH_CALLBACK', $callback);
-
-        $connection = new TwitterOAuth(CONSUMER_KEY, CONSUMER_SECRET);
-
-        $request_token = $connection->oauth('oauth/request_token', array('oauth_callback' => OAUTH_CALLBACK));
-
-        session(['oauth_token' => $request_token['oauth_token']]);
-        session(['oauth_token_secret' => $request_token['oauth_token_secret']]);
-
-        $url = $connection->url('oauth/authorize', array('oauth_token' => $request_token['oauth_token']));
-        return redirect($url);
-    }
-
-    public function generar3(Request $request)
-    {
-
-        $aux = Deck::where('nombre', str_replace('_', ' ', $request->input('deckname')))->first();
-        session(['cual' => 'api3']);
-
-        $consumer_key = $aux->api3key;
-        $consumer_secret = $aux->api3secret;
-        $callback = "https://www.feed-help.de/callback";
-        define('CONSUMER_KEY', $consumer_key);
-        define('CONSUMER_SECRET', $consumer_secret);
-        define('OAUTH_CALLBACK', $callback);
-
-        $connection = new TwitterOAuth(CONSUMER_KEY, CONSUMER_SECRET);
-
-        $request_token = $connection->oauth('oauth/request_token', array('oauth_callback' => OAUTH_CALLBACK));
-
-        session(['oauth_token' => $request_token['oauth_token']]);
-        session(['oauth_token_secret' => $request_token['oauth_token_secret']]);
-
-        $url = $connection->url('oauth/authorize', array('oauth_token' => $request_token['oauth_token']));
-        return redirect($url);
-    }
-
 
     public function callback(Request $request)
     {
-
-        $aux = Deck::where('nombre', str_replace('_', ' ', session('nombredeck')))->first();
-
-        $consumer_key = $aux->crearkey;
-        $consumer_secret = $aux->crearsecret;
-
+        $api = Api::find(session('apiId'));
         $callback = "https://www.feed-help.de/callback";
-        define('CONSUMER_KEY', $consumer_key);
-        define('CONSUMER_SECRET', $consumer_secret);
-        define('OAUTH_CALLBACK', $callback);
 
-        $request_token = [];
-        $request_token['oauth_token'] = session('oauth_token');
-        $request_token['oauth_token_secret'] = session('oauth_token_secret');
+        //Create connection, identifying the api and retrieving the generated oauth info
+        $connection = new TwitterOAuth($api->key, $api->secret, session('oauth_token'), session('oauth_token_secret'));
 
-        $connection = new TwitterOAuth(CONSUMER_KEY, CONSUMER_SECRET, $request_token['oauth_token'], $request_token['oauth_token_secret']);
-
+        //Finally get user Access Tokends
         $access_token = $connection->oauth("oauth/access_token", ["oauth_verifier" => $request['oauth_verifier']]);
 
-        //Guardar key en base de dstos
-        $user = Auth::user();
-        $guardar = Decks_user::where([['username', $user->username], ['nombredeck', session('nombredeck')]])->first();
-        if (session('cual') == "api1") {
-            $cuantos = Decks_user::where('twitter', $access_token['screen_name'])->count();
+        //Create twitter account record
+        $extraInfo = $this->getAccountExtraInfo($access_token['screen_name']);
+        $twitterAccount = TwitterAccount::create([
+            'username' => $access_token['screen_name'],
+            'followers' => $extraInfo['followers_count'],
+            'image_url' => $extraInfo['profile_image_url_https'],
+            'status' => 'pending',
+            'deck_id' => $api->deck->id,
+            'user_id' => auth()->user()->id,
+        ]);
 
-            if ($cuantos >= 2) {
-                echo "¡OJO!, solo puedes estar en dos Decks con la misma cuenta de twitter";
-                die();
-            }
+        //Store api credentials
+        TwitterAccountApi::create([
+            'key' => $access_token['oauth_token'],
+            'secret' => $access_token['oauth_token_secret'],
+            'twitter_account_id' => $twitterAccount->id,
+            'api_id' => $api->id,
+        ]);
 
-            $guardar->crearkey = $access_token['oauth_token'];
-            $guardar->crearsecret = $access_token['oauth_token_secret'];
-            $extra = $this->actualizarPerfil($access_token['screen_name']);
-            $guardar->followers = $extra->followers_count;
-            $guardar->img = $extra->profile_image_url_https;
-
-            $guardar->twitter = $access_token['screen_name'];
-            $guardar->save();
-        } elseif (session('cual') == "api3") {
-            $guardar->api3key = $access_token['oauth_token'];
-            $guardar->api3secret = $access_token['oauth_token_secret'];
-            $guardar->save();
-        } else {
-            $guardar->borrarkey = $access_token['oauth_token'];
-            $guardar->borrarsecret = $access_token['oauth_token_secret'];
-            $guardar->save();
-        }
-
-        //Check if user has an invalid api key stored, to erase that register from DB
-
-        $existe = Blockeduser::where([['username', $user->username], ['deck', session('nombredeck')]])->first();
-        if ($existe != null) {
-            $existe->delete();
-        }
-
-
+        $deckUser = DeckUser::where([['user_id', auth()->user()->id], ['deck_id', $api->deck->id]])->first();
+        $deckUser->twitter_account_id = $twitterAccount->id;
+        $deckUser->save();
+        return 'exito';
         echo "<script>window.close();</script>";
     }
+
+    public function getAccountExtraInfo($username)
+    {
+        $profile = $this->getUserProfile($username);
+
+        return [
+            'followers_count' => $profile->data->user->legacy->followers_count,
+            'profile_image_url_https' => str_replace('normal', '400x400', $profile->data->user->legacy->profile_image_url_https)
+        ];
+
+    }
+
+    public function getUserProfile($username)
+    {
+        $url = "https://twitter.com/i/api/graphql/ku_TJZNyXL2T4-D9Oypg7w/UserByScreenName?variables=%7B%22screen_name%22%3A%22" . $username . "%22%2C%22withHighlightedLabel%22%3Atrue%7D";
+        $curl = curl_init($url);
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+        $headers = array(
+            "authorization: Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
+            "x-guest-token: " . $this->getGuestToken(),
+        );
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        $resp = curl_exec($curl);
+        curl_close($curl);
+        return json_decode($resp);
+    }
+
+    public function getGuestToken()
+    {
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, 'https://api.twitter.com/1.1/guest/activate.json');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_ENCODING, 'gzip, deflate');
+
+        $headers = array();
+        $headers[] = 'Authority: api.twitter.com';
+        $headers[] = 'Content-Length: 0';
+        $headers[] = 'Sec-Ch-Ua: \"Google Chrome\";v=\"87\", \" Not;A Brand\";v=\"99\", \"Chromium\";v=\"87\"';
+        $headers[] = 'X-Twitter-Client-Language: es';
+        $headers[] = 'Sec-Ch-Ua-Mobile: ?0';
+        $headers[] = 'Authorization: Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
+        $headers[] = 'Content-Type: application/x-www-form-urlencoded';
+        $headers[] = 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36';
+        $headers[] = 'X-Twitter-Active-User: yes';
+        $headers[] = 'Accept: */*';
+        $headers[] = 'Origin: https://twitter.com';
+        $headers[] = 'Sec-Fetch-Site: same-site';
+        $headers[] = 'Sec-Fetch-Mode: cors';
+        $headers[] = 'Sec-Fetch-Dest: empty';
+        $headers[] = 'Referer: https://twitter.com/';
+        $headers[] = 'Accept-Language: es-ES,es;q=0.9';
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+        $result = json_decode(curl_exec($ch));
+        curl_close($ch);
+
+        return ($result->guest_token);
+    }
+
     public function reautorizar()
     {
         $user = Auth::user();
@@ -218,6 +218,14 @@ class TwitterController extends Controller
         }
     }
 
+    public function isError($objeto)
+    {
+        if (isset($objeto->errors[0]->message)) {
+            return "si";
+        } else {
+            return "no";
+        }
+    }
 
     public function testrt(Request $request)
     {
@@ -275,7 +283,7 @@ class TwitterController extends Controller
                 }
             }
 
-            $controlador =  $aux->numero;
+            $controlador = $aux->numero;
 
             $tweet = $request->input('rtid');
             $deck_name = $request->input('deckname');
@@ -314,7 +322,7 @@ class TwitterController extends Controller
                     $c->mensaje = $statues->errors[0]->message;
                     array_push($quienes, $c);
 
-                    //Verificar si no tiene api aprobada, lo guarda en la base de datos. 
+                    //Verificar si no tiene api aprobada, lo guarda en la base de datos.
                     $this::checkAndSaveIfInvalidOrExpiredToken($guardar->username, $deck_name, $statues->errors[0]->code);
                 }
                 $total++;
@@ -375,7 +383,7 @@ class TwitterController extends Controller
                 $c->mensaje = $statues->errors[0]->message;
                 array_push($quienes, $c);
 
-                //Verificar si no tiene api aprobada, lo guarda en la base de datos. 
+                //Verificar si no tiene api aprobada, lo guarda en la base de datos.
                 $this->checkAndSaveIfInvalidOrExpiredToken($guardar->username, $deck_name, $statues->errors[0]->code);
             }
             $total++;
@@ -396,13 +404,12 @@ class TwitterController extends Controller
 
     /**
      * Check and safe if invaliodo or expiren token. Guarda el usuario infractor.
-     * Si ya existe, ignora el procedimiento. 
+     * Si ya existe, ignora el procedimiento.
      *
      * @param  $username
      * @param  $deckname
-     * @param  $code status coe from api. 
-
-     * @return void 
+     * @param  $code status coe from api.
+     * @return void
      */
     public static function checkAndSaveIfInvalidOrExpiredToken($username, $deckname, $code)
     {
@@ -416,6 +423,20 @@ class TwitterController extends Controller
                 $infractor->save();
             }
         }
+    }
+
+    /**
+     * IsBlocked. Determina si un usuario para determinado deckname
+     * ha sido bloqueado debido a que no tiene autorizada la api
+     *
+     * @param string $username username
+     * @param string $deck Nombre del deck en cuestion
+     * @return boolean Verdadero si ha sido bloqueado, falso si esta libre de pecados
+     */
+    public function isBlocked($username, $deck)
+    {
+        $search = Blockeduser::where(['username' => $username, 'deck' => $deck])->count();
+        return $search >= 1 ? true : false;
     }
 
     /**
@@ -434,99 +455,11 @@ class TwitterController extends Controller
         if ($posible != null) {
 
             if (($posible->created_at->diff(Carbon::now())->h) < 1) {
-                return true; // User is blocked. 
+                return true; // User is blocked.
             }
         }
         return false; // User is not blocked.
     }
-    public function isError($objeto)
-    {
-        if (isset($objeto->errors[0]->message)) {
-            return "si";
-        } else {
-            return "no";
-        }
-    }
-    /**
-     * IsBlocked. Determina si un usuario para determinado deckname
-     * ha sido bloqueado debido a que no tiene autorizada la api
-     *
-     * @param string $username username
-     * @param string $deck Nombre del deck en cuestion
-     * @return boolean Verdadero si ha sido bloqueado, falso si esta libre de pecados
-     */
-    public function isBlocked($username, $deck)
-    {
-        $search = Blockeduser::where(['username' => $username, 'deck' => $deck])->count();
-        return $search >= 1 ? true : false;
-    }
-
-    public function actualizarPerfil($username)
-    {
-        $profile = $this->getUserProfile($username);
-
-        //Triying to fix
-        return (object)[
-            'followers_count' => $profile->data->user->legacy->followers_count,
-            'profile_image_url_https' => str_replace('normal', '400x400', $profile->data->user->legacy->profile_image_url_https)
-        ];
-        //end fixing
-        $connection = new TwitterOAuth(CONSUMER_KEY, CONSUMER_SECRET);
-        $statues = $connection->get("users/show", ["id" => $objeto]);
-        return $statues;
-    }
-
-    public function getUserProfile($username)
-    {
-        $url = "https://twitter.com/i/api/graphql/ku_TJZNyXL2T4-D9Oypg7w/UserByScreenName?variables=%7B%22screen_name%22%3A%22" . $username . "%22%2C%22withHighlightedLabel%22%3Atrue%7D";
-        $curl = curl_init($url);
-        curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-
-        $headers = array(
-            "authorization: Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
-            "x-guest-token: " . $this->getGuestToken(),
-        );
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        $resp = curl_exec($curl);
-        curl_close($curl);
-        return json_decode($resp);
-    }
-
-    public function getGuestToken()
-    {
-        $ch = curl_init();
-
-        curl_setopt($ch, CURLOPT_URL, 'https://api.twitter.com/1.1/guest/activate.json');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_ENCODING, 'gzip, deflate');
-
-        $headers = array();
-        $headers[] = 'Authority: api.twitter.com';
-        $headers[] = 'Content-Length: 0';
-        $headers[] = 'Sec-Ch-Ua: \"Google Chrome\";v=\"87\", \" Not;A Brand\";v=\"99\", \"Chromium\";v=\"87\"';
-        $headers[] = 'X-Twitter-Client-Language: es';
-        $headers[] = 'Sec-Ch-Ua-Mobile: ?0';
-        $headers[] = 'Authorization: Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
-        $headers[] = 'Content-Type: application/x-www-form-urlencoded';
-        $headers[] = 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36';
-        $headers[] = 'X-Twitter-Active-User: yes';
-        $headers[] = 'Accept: */*';
-        $headers[] = 'Origin: https://twitter.com';
-        $headers[] = 'Sec-Fetch-Site: same-site';
-        $headers[] = 'Sec-Fetch-Mode: cors';
-        $headers[] = 'Sec-Fetch-Dest: empty';
-        $headers[] = 'Referer: https://twitter.com/';
-        $headers[] = 'Accept-Language: es-ES,es;q=0.9';
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-        $result = json_decode(curl_exec($ch));
-        curl_close($ch);
-
-        return ($result->guest_token);
-    }
-
 
     public function hora()
     {
@@ -583,6 +516,7 @@ class TwitterController extends Controller
 
         echo "listo";
     }
+
     public function unrt()
     {
         $callback = "https://www.feed-help.de/callback";
@@ -612,7 +546,6 @@ class TwitterController extends Controller
                 $no = "";
                 foreach ($borrame as $guardar) {
                     //if(!($guardar->nombredeck == "MM_Deck")){
-
 
 
                     $access_token = [];

@@ -18,7 +18,7 @@ class CreateApisTable extends Migration
             $table->string('name');
             $table->string('key');
             $table->string('secret');
-            $table->foreignId('decks_id')->constrained()->onDelete('cascade');
+            $table->foreignId('deck_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }

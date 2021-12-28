@@ -4,11 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Deck;
 use App\Decks_user;
-use App\Mantenimiento;
 use App\Rt;
 use App\System;
+use App\TwitterAccount;
 use App\User;
-use Artisan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -167,25 +166,22 @@ class DeckController extends Controller
 
         $deckUsers = DB::table('deck_user')
             ->select([
-                'u.username as userUsername',
-                't.username as twitterUsername', 't.followers as twitterFollowers', 't.status as twitterStatus','t.image_url',
-                'd.followers as deckFollowers', 'd.name as deckName', 'd.icon as deckIcon'
+                'u.username as userUsername', 'u.id as userId',
+                't.username as twitterUsername', 't.followers as twitterFollowers', 't.status as twitterStatus', 't.image_url',
             ])
             ->where('deck_user.deck_id', $id)
-            ->join('decks AS d', 'deck_user.deck_id', '=', 'd.id')
             ->join('users AS u', 'deck_user.user_id', '=', 'u.id')
             ->leftJoin('twitter_accounts AS t', 'deck_user.twitter_account_id', '=', 't.id')
             ->get()
             ->sortBy('twitter_accounts.followers');
-
         //If the user is owner or admin , lets
         $userRole = $deckInfo['role'];
         if ($userRole === 'owner' || $userRole === 'admin') {
             $users = DB::table('users')->select('name', 'id')->get();
-            return view('vuexy.decks.show', compact('deck', 'deckUsers','users'));
+            return view('vuexy.decks.show', compact('deck', 'deckUsers', 'users'));
 
         }
-        return view('vuexy.decks.show', compact('deck','deckUsers'));
+        return view('vuexy.decks.show', compact('deck', 'deckUsers'));
 
     }
 
@@ -221,10 +217,10 @@ class DeckController extends Controller
         return back();
     }
 
-    public function newUser(Request $request, $deck_id)
+    public function newUser(Request $request, $deckId)
     {
         //Check if the user can perform this action
-        $this->hasAdminPermissions($deck_id);
+        $this->hasAdminPermissions($deckId);
         //Check if is asking for a valid role
         Validator::make($request->all(), [
             'role' => [
@@ -235,15 +231,14 @@ class DeckController extends Controller
         ]);
 
         $newUser = User::find($request->input('user_id'));
-        $deckRole = $newUser->getDeckInfo($deck_id);
+        $deckRole = $newUser->getDeckInfo($deckId);
         //Check if the user already exist in the deck
         if ($deckRole['hasPermission'] === true) {
             return abort(403, 'El usuario ya pertenece al deck');
         }
 
-        $newUser->decks()->sync([$deck_id], ['role' => $request->input('role')]);
+        $newUser->decks()->sync([$deckId], ['role' => $request->input('role')]);
         return back();
-
     }
 
     private function hasAdminPermissions($deck_id): void
@@ -255,6 +250,31 @@ class DeckController extends Controller
         if (!($deckRole === "owner" || $deckRole === "admin")) {
             abort('403');
         }
+    }
+
+
+    public function deleteUser($deckId, $userId)
+    {
+        $this->hasAdminPermissions($deckId);
+        $deckUser = DB::table('deck_user')
+            ->where('user_id', $userId)
+            ->where('deck_id', $deckId)
+            ->first();
+        if (!$deckUser) {
+            abort(404);
+        }
+        //delete twitter account
+        $twitterAccount = TwitterAccount::find($deckUser->twitter_account_id);
+        if ($twitterAccount) {
+            $twitterAccount->delete();
+        }
+        //delete deck relationship
+        DB::table('deck_user')
+            ->where('user_id', $userId)
+            ->where('deck_id', $deckId)
+            ->delete();
+
+        return back()->with('mensaje', 'Usuario eliminado exitosamente');
     }
 
     public function newAdmin(Request $request, $id)
@@ -305,24 +325,6 @@ class DeckController extends Controller
         return redirect()->route('decks.index');
     }
 
-    public function eliminarUser(Request $request)
-    {
-        if (
-        !(Auth::user()->hasRole(['admin-' . $request->input("deck-name")])
-            or Auth::user()->hasRole(['Owner']))
-        ) {
-            return back()->with('error', 'Ya esta parchado =)!!! .i.');
-        }
-
-        $registro = Decks_user::where([['username', $request->input("username")], ['nombredeck', $request->input("deck-name")]])->first();
-        $dale = $request->input("user-id");
-
-        $registro->delete();
-        $user = User::where('username', $request->input("username"))->first();
-        $user->removeRole($request->input("deck-name"));
-
-        return back()->with('mensaje', 'Usuario con Twitter ' . $dale . ' eliminado exitosamente');
-    }
 
     public function cache()
     {

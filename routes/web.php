@@ -22,9 +22,11 @@ Route::delete('/news/{id}', 'NewsController@destroy')->middleware('auth', 'isOwn
 Route::resource('decks', 'DeckController')->middleware(['auth']);
 /* ---------------GESTIÓN INDIVIDUAL DEL DECK---------------- */
 //Añadir usuario al deck
-Route::post('decks/{deck_id}/twitter_account', 'DeckController@newUser')->name('decks.twitterAccounts.store');
-Route::post('panel.deck.admin/{id}', 'DeckController@newAdmin')->name('nuevoadmin');
 
+Route::post('decks/{deckId}/users', 'DeckController@newUser')->middleware('auth')->name('decks.users.store');
+Route::delete('decks/{deckId}/user/{userId}', 'DeckController@deleteUser')->middleware('auth')->name('decks.users.delete');
+
+Route::get('/testapi', 'twitter\TwitterController@buildAuthorizeURL');
 
 Route::get('/theme', function () {
     return view('vuexy.decks.index');
@@ -65,9 +67,6 @@ Route::post('/generar1', 'twitter\TwitterController@generar1')->name('generar1')
 Route::post('/generar3', 'twitter\TwitterController@generar3')->name('generar3')->middleware('auth');
 
 Route::get('/reautorizar', 'twitter\TwitterController@reautorizar')->name('reautorizar')->middleware('auth');
-
-
-Route::post('panel.deck.eliminar-user/', 'DeckController@eliminarUser')->name('eliminar-user')->middleware('auth');
 
 
 Route::get('/config-cache', 'DeckController@cache');

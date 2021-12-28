@@ -31,8 +31,15 @@ use Illuminate\Database\Eloquent\Model;
  */
 class TwitterAccount extends Model
 {
+    protected $fillable = ['username', 'followers', 'image_url', 'deck_id', 'user_id', 'status'];
+
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function twitterAccountApi()
+    {
+        return $this->hasMany(TwitterAccountApi::class);
     }
 }
