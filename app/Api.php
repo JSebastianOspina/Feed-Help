@@ -34,4 +34,10 @@ class Api extends Model
     {
         return $this->belongsTo(Deck::class);
     }
+
+    public function twitterAccountApis()
+    {
+        return $this->hasMany(TwitterAccountApi::class);
+    }
+
 }

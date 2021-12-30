@@ -81,8 +81,7 @@
                                                 data-bs-toggle="modal">
                                             Editar deck
                                         </button>
-                                        <a href="javascript:;" class="btn btn-outline-danger suspend-user">Suspender
-                                            Deck</a>
+
                                     </div>
                                 </div>
                             </div>
@@ -95,10 +94,19 @@
                     <!-- User Content -->
                     <div class="col-xl-8 col-lg-7 col-md-7 order-0 order-md-1">
                         <!-- User Pills -->
+
                         <div class="d-flex justify-content-end" style="margin-bottom: 15px">
+
+
                             <a class="btn btn-primary btn-sm me-1" href="{{route('decks.show',['deck'=>1])}}">
                                 <i data-feather="user"></i>
                                 <span>Gestionar usuarios</span>
+                            </a>
+
+                            <a class="btn btn-primary btn-sm me-1"
+                               href="{{route('decks.apis.verify',['deckId'=>$deck->id])}}">
+                                <i data-feather="settings"></i>
+                                <span>Gestionar apis</span>
                             </a>
 
                         </div>
@@ -310,8 +318,9 @@
                                 <div class="col-12 col-md-6">
                                     <label class="form-label" for="enabled">Estado del Deck</label>
                                     <select id="enabled" name="enabled" class="form-select">
-                                        <option value="1"  {{$deck->enabled === 1? 'selected': ''}}>Activo</option>
-                                        <option value="0" {{$deck->enabled === 0? 'selected': ''}}>Mantenimiento</option>
+                                        <option value="1" {{$deck->enabled === 1? 'selected': ''}}>Activo</option>
+                                        <option value="0" {{$deck->enabled === 0? 'selected': ''}}>Mantenimiento
+                                        </option>
 
                                     </select>
                                 </div>

@@ -426,4 +426,53 @@ class DeckController extends Controller
         }
         return 'actualizado';
     }
+
+
+    /*COMIENZA LA LOGICA DE LAS APIS */
+
+    public function verifyUserApis($deckId)
+    {
+        if (!(auth()->user()->getDeckInfo($deckId)['hasPermission'])) {
+            abort(403);
+        }
+
+        $apis = DB::table('apis')
+            ->select([
+                'apis.id',
+                'apis.name',
+                'apis.type',
+                'ta.isActive',
+                'ta.twitter_account_id'
+            ])
+            ->where('apis.deck_id', $deckId)
+            ->leftJoin('twitter_account_apis AS ta', 'apis.id', '=', 'ta.api_id')
+            ->where(function ($query) {
+                $query->where('ta.user_id', auth()->user()->id)
+                    ->orWhere('ta.twitter_account_id', '=', null);
+            })
+            ->get();
+
+        $rtAndDeleteApis = $this->getRtAndDeleteApis($apis);
+
+        return view('vuexy.decks.apis', [
+            'rtApis' => $rtAndDeleteApis['rtApis'],
+            'deleteApis' => $rtAndDeleteApis['deleteApis'],
+            'deckId' => $deckId
+        ]);
+
+    }
+
+    private function getRtAndDeleteApis($allApis)
+    {
+        $rtApis = [];
+        $deleteApis = [];
+        foreach ($allApis as $api) {
+            if ($api->type === 'rt') {
+                $rtApis[] = $api;
+            } else {
+                $deleteApis[] = $api;
+            }
+        }
+        return ['rtApis' => $rtApis, 'deleteApis' => $deleteApis];
+    }
 }

@@ -9,12 +9,14 @@ use App\Deck;
 use App\Decks_user;
 use App\DeckUser;
 use App\Http\Controllers\Controller;
+use App\Record;
 use App\Rt;
 use App\TwitterAccount;
 use App\TwitterAccountApi;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 require 'twitteroauth/autoload.php';
 
@@ -28,7 +30,7 @@ class TwitterController extends Controller
         if ($api === null) {
             abort(404);
         }
-        //Save the API ID for beign able to remember the tokens.
+        //Save the API ID for benign able to remember the tokens.
         session(['apiId' => $api->id]);
 
         //check if user is cheating
@@ -66,28 +68,43 @@ class TwitterController extends Controller
 
         //Create twitter account record
         $extraInfo = $this->getAccountExtraInfo($access_token['screen_name']);
-        $twitterAccount = TwitterAccount::create([
-            'username' => $access_token['screen_name'],
-            'followers' => $extraInfo['followers_count'],
-            'image_url' => $extraInfo['profile_image_url_https'],
-            'status' => 'pending',
-            'deck_id' => $api->deck->id,
-            'user_id' => auth()->user()->id,
-        ]);
+
+        $twitterAccount = TwitterAccount::updateOrCreate(
+            [
+                'deck_id' => $api->deck->id,
+                'user_id' => auth()->user()->id,
+            ],
+            [
+                'username' => $access_token['screen_name'],
+                'followers' => $extraInfo['followers_count'],
+                'image_url' => $extraInfo['profile_image_url_https'],
+                'status' => 'pending',
+            ]);
 
         //Store api credentials
-        TwitterAccountApi::create([
-            'key' => $access_token['oauth_token'],
-            'secret' => $access_token['oauth_token_secret'],
-            'twitter_account_id' => $twitterAccount->id,
-            'api_id' => $api->id,
-        ]);
+        TwitterAccountApi::updateOrCreate(
+            [
+                'twitter_account_id' => $twitterAccount->id,
+                'api_id' => $api->id,
+                'user_id' => auth()->user()->id,
+            ],
+            [
+                'isActive' => true,
+                'key' => $access_token['oauth_token'],
+                'secret' => $access_token['oauth_token_secret'],
+            ]);
 
+        //Sync the pivot table
         $deckUser = DeckUser::where([['user_id', auth()->user()->id], ['deck_id', $api->deck->id]])->first();
         $deckUser->twitter_account_id = $twitterAccount->id;
         $deckUser->save();
-        return 'exito';
-        echo "<script>window.close();</script>";
+
+
+        // Check if the user has already authorize all apis in order to active it account.
+        $this->checkIfTwitterAccountHasAllApis($twitterAccount);
+
+        //Redirect to view
+        return redirect()->route('decks.apis.verify', ['deckId' => $api->deck->id]);
     }
 
     public function getAccountExtraInfo($username)
@@ -150,6 +167,22 @@ class TwitterController extends Controller
         curl_close($ch);
 
         return ($result->guest_token);
+    }
+
+    private function checkIfTwitterAccountHasAllApis(TwitterAccount $twitterAccount)
+    {
+        $apisCount = DB::table('apis')->select('id')->where('deck_id', $api->deck->id)->count();
+        $twitterAccountsCount = DB::table('twitter_account_apis')
+            ->where('twitter_account_id', $twitterAccount->id)
+            ->where('isActive', 1)
+            ->count();
+
+        if ($apisCount === $twitterAccountsCount) {
+
+            $twitterAccount->status = 'active';
+            $twitterAccount->save();
+        }
+
     }
 
     public function reautorizar()
@@ -218,13 +251,13 @@ class TwitterController extends Controller
         }
     }
 
-    public function isError($objeto)
+    public function isError($responseObject): bool
     {
         if (isset($objeto->errors[0]->message)) {
-            return "si";
-        } else {
-            return "no";
+            return true;
         }
+
+        return false;
     }
 
     public function testrt(Request $request)
@@ -234,6 +267,229 @@ class TwitterController extends Controller
         $dif = $ultimo->created_at->diffInMinutes($actual);
         $respuesta = "Actual {$actual}, ultimo {$ultimo->updated_at}, diferecia = {$dif} ";
         return $respuesta;
+    }
+
+    public function makeRT(Request $request)
+    {
+        $user = auth()->user();
+
+        //Get all RT deck's apis
+        $apis = Api::where('deck_id', $request->input('deckId'))
+            ->where('type', 'rt')
+            ->get();
+        //Pick a random api
+        $selectedApi = $apis->random();
+
+
+        //Check if is owner, for not limiting any characteristic
+        if (!$user->isOwner()) {
+
+            return $this->RTFromOwner($request); // Makes the Rt if the user is an Owner
+        }
+        /* THE REQUEST VERIFICATION STARTS */
+
+        //Verify if the user belongs to the deck
+        if ($user->getDeckInfo($request->input('deckId'))['hasPermission'] === false) {
+            return response()->json(['error' => true, 'message' => 'Ha ocurrido un error, eso es lo único que sabemos']);
+        }
+
+        $userTwitterAccount = TwitterAccount::where('deck_id', $request->input('deckId'))
+            ->where('user_id', $user->id)
+            ->first();
+
+        // Verify if the user has a twitter account attach to the deck
+        if ($userTwitterAccount === null) {
+            return response()->json(['error' => true, 'message' => 'No tienes ninguna cuenta vinculada al deck']);
+        }
+
+        //Check if the user is time restricted
+        $deck = $selectedApi->deck;
+
+        $lastRecord = Record::where('username', $user->username)
+            ->where('deck_id', $deck->id)
+            ->where('created_at', '>=', Carbon::now()->subHour())
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+
+        if ($lastRecord->count() >= $deck->rt_number) {
+            $nextHour = Carbon::parse($lastRecord[0]->created_at)->addHour();
+            $remainingMinutes = $nextHour->diffInMinutes(Carbon::now());
+
+            return response()->json([
+                'error' => true,
+                'message' => 'Has excedido tus RT/H. El próximo RT estará disponible en ' . $remainingMinutes . ' minutos']);
+
+        }
+
+
+        //Verify if the user's twitter account has all apis
+        if ($userTwitterAccount->status !== 'active') {
+            return response()->json(
+                [
+                    'error' => true,
+                    'message' => 'Parece que estas intentando dar RT desde una cuenta que no cumple los requisitos. Por favor, revisa tus Apis'
+                ]);
+        }
+
+        //CHeck if the deck has apis attached
+        if (count($apis) === 0) {
+            return response()->json(['error' => true, 'message' => 'El deck no tiene apis registradas para dar RT']);
+        }
+
+
+        //Get all twitter accounts attached to that api
+        $twitterAccountsApis = $selectedApi->twitterAccountApis;
+
+        //Start a counter in order to track the successfully RT
+        $totalTwitterAccountsApis = $twitterAccountsApis->count();
+        $successRt = 0;
+        $notRtBy = '';
+        $extraInfo = [];
+        //iterate over all accounts and make the rt from there
+        $tweetId = $this->getTweetId($request);
+        foreach ($twitterAccountsApis as $twitterAccountApi) {
+            //Create api connection and make RT post request
+            $apiConnection = new TwitterOAuth($selectedApi->key, $selectedApi->secret, $twitterAccountApi->key, $twitterAccountApi->secret);
+            $response = $apiConnection->post("statuses/retweet", ["id" => $tweetId]);
+            if ($this->isError($response) === false) {
+                //The request doesn't have errors, let's count it
+                $successRt++;
+            } else {
+                //Store the information from the accounts that didn't RT
+                $this->handleErrorInformation($twitterAccountApi, $notRtBy, $response, $extraInfo);
+            }
+        }
+
+        //Save the record
+        $this->createNewTweetRecord($request, $tweetId, $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
+
+        return response()->json(['successRT' => $successRt . '/' . $totalTwitterAccountsApis]);
+    }
+
+    /**
+     * RTFrom Owner. Same darRT method but has not time restriction or api dependence.
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function RTFromOwner(Request $request)
+    {
+        $aux = Deck::where('nombre', str_replace('_', ' ', $request->input('deckname')))->first();
+
+        $consumer_key = $aux->crearkey;
+        $consumer_secret = $aux->crearsecret;
+
+        $auxx = explode('/', $request->input('rtid'));
+        $tweet = end($auxx);
+
+        $deck_name = $request->input('deckname');
+        $guardarr = Decks_user::where(['nombredeck' => $deck_name])->get();
+        $contador = 0;
+        $total = 0;
+        $quienes = [];
+        $no = "";
+        foreach ($guardarr as $guardar) {
+            $access_token = [];
+            $access_token['oauth_token'] = $guardar->crearkey;
+            $access_token['oauth_token_secret'] = $guardar->crearsecret;
+            $connection = new TwitterOAuth($consumer_key, $consumer_secret, $access_token['oauth_token'], $access_token['oauth_token_secret']);
+
+            $statues = $connection->post("statuses/retweet", ["id" => $tweet]);
+
+            if ($this->isError($statues) == "no") {
+                $contador++;
+            } else {
+                $no = $no . $guardar->twitter . ",";
+                $c = new \stdClass();
+                $c->twitter = $guardar->twitter;
+                $c->codigo = $statues->errors[0]->code;
+                $c->mensaje = $statues->errors[0]->message;
+                array_push($quienes, $c);
+
+                //Verificar si no tiene api aprobada, lo guarda en la base de datos.
+                $this->checkAndSaveIfInvalidOrExpiredToken($guardar->username, $deck_name, $statues->errors[0]->code);
+            }
+            $total++;
+        }
+
+        $registro = new Rt;
+        $registro->rtid = $tweet;
+        $registro->deck = $deck_name;
+        $registro->cuenta = Auth::user()->username;
+        $registro->twitter = $no; //TERMINAR
+        $registro->pendiente = "Si";
+        $registro->cantidad = $contador . '/' . $total;
+        $registro->quienes = serialize($quienes);
+        $registro->save();
+
+        return back()->with('total', $contador . '/' . $total);
+    }
+
+    /**
+     * Check and safe if invalid or expiren token. Guarda el usuario infractor.
+     * Si ya existe, ignora el procedimiento.
+     *
+     * @param  $username
+     * @param  $deckname
+     * @param  $code status coe from api.
+     * @return void
+     */
+    public static function checkAndSaveIfInvalidOrExpiredToken($statusCode, TwitterAccountApi $twitterAccountApi): void
+    {
+        if ($statusCode === 89 || $statusCode === 32) {
+            $twitterAccountApi->isActive = false;
+            $twitterAccountApi->save();
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return array
+     */
+    private function getTweetId(Request $request): string
+    {
+        $tweetUrl = explode('/', $request->input('tweetURL'));
+        return end($tweetUrl);
+    }
+
+    /**
+     * @param $twitterAccountApi
+     * @param string $notRtBy
+     * @param $response
+     * @param array $extraInfo
+     */
+    private function handleErrorInformation($twitterAccountApi, string &$notRtBy, $response, array &$extraInfo): void
+    {
+        $notRtBy .= $twitterAccountApi->twitterAccount->username . ',';
+        $extraInfo[] = (object)[
+            'username' => $twitterAccountApi->twitterAccount->username,
+            'status_code' => $response->errors[0]->code,
+            'message' => $response->errors[0]->message,
+        ];
+        //Now, check if the user has to re-authorize the api.
+        self::checkAndSaveIfInvalidOrExpiredToken($response->errors[0]->code, $twitterAccountApi);
+    }
+
+    /**
+     * @param Request $request
+     * @param $tweetId
+     * @param int $successRt
+     * @param $totalTwitterAccountsApis
+     * @param string $notRtBy
+     * @param array $extraInfo
+     */
+    private function createNewTweetRecord(Request $request, $tweetId, int $successRt, $totalTwitterAccountsApis, string $notRtBy, array $extraInfo): void
+    {
+        Record::create([
+            'username' => Auth::user()->username,
+            'deck_id' => $request->input('deckId'),
+            'tweet_id' => $tweetId,
+            'success_rt' => $successRt . '/' . $totalTwitterAccountsApis,
+            'not_rt_by' => $notRtBy,
+            'extra_info' => serialize($extraInfo),
+            'pending' => true
+        ]);
     }
 
     public function darRT(Request $request)
@@ -340,88 +596,6 @@ class TwitterController extends Controller
             $registro->save();
 
             return back()->with('total', $contador . '/' . $total);
-        }
-    }
-
-    /**
-     * RTFrom Owner. Same darRT method but has not time restriction or api dependence.
-     *
-     * @param Request $request
-     * @return void
-     */
-    public function RTFromOwner(Request $request)
-    {
-        $aux = Deck::where('nombre', str_replace('_', ' ', $request->input('deckname')))->first();
-
-        $consumer_key = $aux->crearkey;
-        $consumer_secret = $aux->crearsecret;
-
-        $auxx = explode('/', $request->input('rtid'));
-        $tweet = end($auxx);;
-
-        $deck_name = $request->input('deckname');
-        $guardarr = Decks_user::where(['nombredeck' => $deck_name])->get();
-        $contador = 0;
-        $total = 0;
-        $quienes = [];
-        $no = "";
-        foreach ($guardarr as $guardar) {
-            $access_token = [];
-            $access_token['oauth_token'] = $guardar->crearkey;
-            $access_token['oauth_token_secret'] = $guardar->crearsecret;
-            $connection = new TwitterOAuth($consumer_key, $consumer_secret, $access_token['oauth_token'], $access_token['oauth_token_secret']);
-
-            $statues = $connection->post("statuses/retweet", ["id" => $tweet]);
-
-            if ($this->isError($statues) == "no") {
-                $contador++;
-            } else {
-                $no = $no . $guardar->twitter . ",";
-                $c = new \stdClass();
-                $c->twitter = $guardar->twitter;
-                $c->codigo = $statues->errors[0]->code;
-                $c->mensaje = $statues->errors[0]->message;
-                array_push($quienes, $c);
-
-                //Verificar si no tiene api aprobada, lo guarda en la base de datos.
-                $this->checkAndSaveIfInvalidOrExpiredToken($guardar->username, $deck_name, $statues->errors[0]->code);
-            }
-            $total++;
-        }
-
-        $registro = new Rt;
-        $registro->rtid = $tweet;
-        $registro->deck = $deck_name;
-        $registro->cuenta = Auth::user()->username;
-        $registro->twitter = $no; //TERMINAR
-        $registro->pendiente = "Si";
-        $registro->cantidad = $contador . '/' . $total;
-        $registro->quienes = serialize($quienes);
-        $registro->save();
-
-        return back()->with('total', $contador . '/' . $total);
-    }
-
-    /**
-     * Check and safe if invaliodo or expiren token. Guarda el usuario infractor.
-     * Si ya existe, ignora el procedimiento.
-     *
-     * @param  $username
-     * @param  $deckname
-     * @param  $code status coe from api.
-     * @return void
-     */
-    public static function checkAndSaveIfInvalidOrExpiredToken($username, $deckname, $code)
-    {
-        if ($code == 89 || $code == 32) {
-            $existe = Blockeduser::where(['username' => $username, 'deck' => $deckname])->first();
-            if ($existe == null) {
-                $infractor = new Blockeduser();
-                $infractor->username = $username;
-                $infractor->deck = $deckname;
-                $infractor->error = $code;
-                $infractor->save();
-            }
         }
     }
 
@@ -583,7 +757,6 @@ class TwitterController extends Controller
 
         echo "listo";
     }
-
 
     public function limite($id)
     {

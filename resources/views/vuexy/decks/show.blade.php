@@ -6,10 +6,24 @@
         <div class="col-12">
             <div class="d-flex justify-content-end " style="margin-bottom: 15px">
 
-                <a class="btn btn-primary btn-sm" href="{{route('decks.edit',['deck'=>$deck->id])}}">
+                <button class="btn btn-primary btn-sm me-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#RTModal">
+                    <i data-feather="twitter"></i>
+                    <span>Nuevo RT</span>
+                </button>
+
+                <a class="btn btn-primary btn-sm me-1" href="{{route('decks.apis.verify',['deckId'=>$deck->id])}}">
                     <i data-feather="settings"></i>
-                    <span>Gestionar deck</span>
+                    <span>Gestionar apis</span>
                 </a>
+                @if(auth()->user()->isOwner())
+                    <a class="btn btn-primary btn-sm" href="{{route('decks.edit',['deck'=>$deck->id])}}">
+                        <i data-feather="tool"></i>
+                        <span>Gestionar deck</span>
+                    </a>
+                @endif
+
             </div>
             <div class="card">
                 <div class="card-header">
@@ -25,8 +39,6 @@
                                     Agregar usuario
                                 </button>
                             </div>
-
-
                         @endif
                     </div>
 
@@ -166,6 +178,109 @@
             </div>
         </div>
         <!--/ add new card modal  -->
+
+        <!-- create app modal -->
+        <div class="modal fade" id="RTModal" tabindex="-1" aria-labelledby="RTModal" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-transparent">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body pb-3 px-sm-3">
+                        <h1 class="text-center mb-1" id="createAppTitle">Dar un nuevo Retweet</h1>
+                        <p class="text-center mb-2">Este Tweet será publicado en todas las cuentas activas del Deck</p>
+
+                        <!-- content -->
+
+                        <div class="d-flex flex-column justify-content-center" role="tabpanel">
+                            <div>
+                                <label for="tweetId" class="mb-1">URL del Tweet </label>
+                                <input class="form-control" type="text"
+                                       placeholder="https://twitter.com/iMensajex/status/1394837941264990211"
+                                       id="tweetId" name="tweetId"/>
+                            </div>
+
+
+                            <h5 class="mt-2 pt-1">Estado actual</h5>
+                            <div class="d-flex justify-content-between">
+                                <div class="d-flex">
+                                       <span class="avatar avatar-tag bg-light-info me-1" id="test">
+                                           <i data-feather="clock" class="font-medium-5" id="icon"></i>
+                                       </span>
+                                    <div class="d-flex flex-column">
+                                         <span class="h5 d-block fw-bolder" id="status">
+                                             En espera de tweet
+                                         </span>
+                                        <span id="message">
+                                            Por favor, introduce la URL del tweet para empezar
+                                        </span>
+                                    </div>
+
+                                </div>
+                                <div>
+                                    <div
+                                        class="spinner-grow spinner-grow-sm  text-success me-50"
+                                        style="animation-duration: 1s" id="animation"></div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end mt-2">
+
+                                <button class="btn btn-primary btn-next" onclick="makeRT()" id="submitButton">
+                                    <span class="align-middle d-sm-inline-block d-none">Hacer RT</span>
+                                    <i data-feather="arrow-right" class="align-middle ms-sm-25 ms-0"></i>
+                                </button>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- / create app modal -->
+
+
         <!-- TERMINA LA SECCIÓN DE LOS MODALES-->
+
+        <script>
+            async function makeRT() {
+                let tweetURLField = document.getElementById('tweetId');
+                let tweetId = tweetURLField.value;
+
+                if (tweetId === '') {
+                    alert('Debes ingresar una URL de Twitter Valida');
+                    return;
+                }
+                let status = document.getElementById('status');
+                let message = document.getElementById('message');
+                let submitButton = document.getElementById('submitButton');
+
+                tweetURLField.setAttribute('readonly', 'true');
+                submitButton.setAttribute('disabled', 'disabled');
+                status.innerText = 'Procesando petición';
+                message.innerText = 'Estamos trabajando en tu Tweet, pronto verás los resultados...';
+
+                //Realizar la petición
+                let url = '{{route('makeRT')}}';
+                let data = {
+                    'tweetURL': tweetId,
+                    'deckId': {{$deck->id}},
+                    '_token': '{{csrf_token()}}'
+                }
+                let response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                let responseData = await response.json();
+
+                status.innerText = 'Retweet finalizado';
+                message.innerText = 'Se obtuvo un resultado de ' + responseData.successRT + ' RT';
+                document.getElementById('animation').style.display = 'none';
+            }
+        </script>
     @endif
 @endsection

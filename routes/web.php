@@ -1,5 +1,7 @@
 <?php
 
+use App\Record;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,30 +15,60 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-//SECCION DE NOTICIAS, QUE ESTAN EN LA PAGINA PRINCIPAL
+
+/* --------------------------  | COMIENZAN TODAS LAS RUTAS RELACIONADAS CON NOTICIAS | ------------------------------ */
+
 Route::get('/', 'NewsController@index')->middleware('auth')->name('news.index');
 Route::post('/news', 'NewsController@store')->middleware('auth', 'isOwner')->name('news.store');
 Route::delete('/news/{id}', 'NewsController@destroy')->middleware('auth', 'isOwner')->name('news.delete');
 
-//Resource deck, crear, editar, actualizar, borrar
-Route::resource('decks', 'DeckController')->middleware(['auth']);
-/* ---------------GESTIÓN INDIVIDUAL DEL DECK---------------- */
+/* --------------------------  | COMIENZAN TODAS LAS RUTAS RELACIONADAS CON DECKS | -------------------------------- */
 
-//Añadir usuario al deck
+//Resource deck, crear, editar, actualizar, borrar deck
+Route::resource('decks', 'DeckController')->middleware(['auth']);
+
+/* ---------------USUARIOS DEL DECK--------------- */
+
+/* Añadir usuario al deck */
 Route::post('decks/{deckId}/users', 'DeckController@newUser')->middleware('auth')->name('decks.users.store');
-//Borrar usuario del deck
+/* Borrar usuario del deck */
 Route::delete('decks/{deckId}/user/{userId}', 'DeckController@deleteUser')->middleware('auth')->name('decks.users.delete');
 
-//Administración del Deck (APIS)
+/* ---------------APIS DEL DECK--------------- */
+
+/* Crear api deck */
 Route::post('decks/{deckId}/apis', 'DeckController@storeApi')->middleware('auth')->name('decks.apis.store');
+/* Actualizar api */
 Route::patch('decks/{deckId}/apis/{apiId}', 'DeckController@updateApi')->middleware('auth')->name('decks.apis.patch');
+/* Borrar api deck */
 Route::delete('decks/{deckId}/apis/{apiId}', 'DeckController@deleteApi')->middleware('auth')->name('decks.apis.delete');
 
+/* ---------------APIS - Twitter Acoounts --------------- */
+/* Ver estado actual de las apis(user) */
+Route::get('decks/{deckId}/apis', 'DeckController@verifyUserApis')->middleware('auth')->name('decks.apis.verify');
+/* Re/autorizar una api */
+Route::post('apis/authorize', 'twitter\TwitterController@buildAuthorizeURL')->middleware('auth')->name('decks.apis.authorize');
+/* Hacer RT */
+Route::get('/makeRT', 'twitter\TwitterController@makeRT')->middleware('auth')->name('makeRT');
 
-Route::get('/testapi', 'twitter\TwitterController@buildAuthorizeURL');
+Route::post('/makeRT', 'twitter\TwitterController@makeRT')->middleware('auth')->name('makeRT');
 
 Route::get('/theme', function () {
-    return view('vuexy.decks.admin');
+    $lastRecord = Record::where('username', 'crazysebas')
+        ->where('deck_id', 1)
+        ->where('created_at', '>=', Carbon::now()->subHour())
+        ->orderBy('created_at', 'asc')
+        ->get();
+    $nextHour = Carbon::parse($lastRecord[0]->created_at)->addHour();
+    $remainingMinutes = $nextHour->diffInMinutes(Carbon::now());
+    dd($remainingMinutes);
+    dd($lastRecord);
+    dd(Carbon::now()->subHour());
+    dd(Carbon::now()->diffInHours($lastRecord->created_at));
+    $now = Carbon::now()->toDateTimeString();
+    return $now;
+
+    return view('vuexy.decks.apis');
 });
 
 Route::get('/checkShadowBan/{twitterAccount}', function ($twitterAccount) {
