@@ -180,7 +180,7 @@
         <!--/ add new card modal  -->
 
         <!-- create app modal -->
-        <div class="modal fade" id="RTModal" tabindex="-1" aria-labelledby="RTModal" aria-hidden="true">
+        <div class="modal fade" id="RTModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
                     <div class="modal-header bg-transparent">
@@ -225,6 +225,12 @@
                             </div>
 
                             <div class="d-flex justify-content-end mt-2">
+
+                                <button class="btn btn-primary btn-next" onclick="resetModal()" id="resetButton"
+                                        style="display: none">
+                                    <span class="align-middle d-sm-inline-block d-none">Hacer otro RT</span>
+                                    <i data-feather="arrow-right" class="align-middle ms-sm-25 ms-0"></i>
+                                </button>
 
                                 <button class="btn btn-primary btn-next" onclick="makeRT()" id="submitButton">
                                     <span class="align-middle d-sm-inline-block d-none">Hacer RT</span>
@@ -299,12 +305,48 @@
                     },
                     body: JSON.stringify(data)
                 });
-                let responseData = await response.json();
-                return responseData;
+                return await response.json();
+            }
+
+            function changeModalStatusToProcessing(tweetURLField, submitButton, status, message) {
+                tweetURLField.setAttribute('readonly', 'true');
+                submitButton.setAttribute('disabled', 'disabled');
+                status.innerText = 'Procesando petición';
+                message.innerText = 'Estamos trabajando en tu Tweet, pronto verás los resultados...';
+            }
+
+            function changeModalStatusToNewRT(tweetURLField, submitButton, status, message) {
+                tweetURLField.removeAttribute('readonly');
+                submitButton.removeAttribute('disabled');
+                status.innerText = 'En espera de tweet';
+                message.innerText = 'Por favor, introduce la URL del tweet para empezar';
+            }
+
+            function changeModalStatusToEnd(tweetURLField, submitButton, status, message, successRT) {
+                status.innerText = 'Retweet finalizado';
+                message.innerText = 'Se obtuvo un resultado de ' + successRT + ' RT';
+                document.getElementById('animation').style.display = 'none';
+                submitButton.style.display = 'none';
+                resetButton.style.display = 'block';
+            }
+
+            function resetModal() {
+                let tweetURLField = document.getElementById('tweetId');
+                let status = document.getElementById('status');
+                let message = document.getElementById('message');
+                let submitButton = document.getElementById('submitButton');
+                let resetButton = document.getElementById('resetButton');
+
+                tweetURLField.value = '';
+                submitButton.style.display = 'block';
+                resetButton.style.display = 'none';
+                document.getElementById('animation').style.display = 'block';
+
+                changeModalStatusToNewRT(tweetURLField, submitButton, status, message);
+
             }
 
             async function makeRT() {
-
 
                 //Capture all necessary DOM documents.
 
@@ -312,23 +354,21 @@
                 let status = document.getElementById('status');
                 let message = document.getElementById('message');
                 let submitButton = document.getElementById('submitButton');
+                let resetButton = document.getElementById('resetButton');
                 let errorMessage = document.getElementById('errorMessage');
-                let retweetModal = new bootstrap.Modal(document.getElementById('RTModal'));
+                let retweetModal = bootstrap.Modal.getInstance((document.getElementById('RTModal')));
 
                 let tweetUrl = tweetURLField.value;
                 if (!isValidTwitterURL(tweetUrl)) {
                     let errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                    console.log(errorModal)
                     errorMessage.innerText = '"Debes introducir una URL de un tweet válido"';
                     errorModal.show();
                     return;
                 }
 
-
                 //Change the status to processing
-                tweetURLField.setAttribute('readonly', 'true');
-                submitButton.setAttribute('disabled', 'disabled');
-                status.innerText = 'Procesando petición';
-                message.innerText = 'Estamos trabajando en tu Tweet, pronto verás los resultados...';
+                changeModalStatusToProcessing(tweetURLField, submitButton, status, message);
 
                 //Realizar la petición
                 let responseData = await makeRTRequest(tweetUrl);
@@ -338,12 +378,13 @@
                     let errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
                     errorMessage.innerText = '"' + responseData.message + '"';
                     errorModal.show();
-                    retweetModal.toggle()
+                    retweetModal.hide();
+                    changeModalStatusToNewRT(tweetURLField, submitButton, status, message);
                     return;
                 }
-                status.innerText = 'Retweet finalizado';
-                message.innerText = 'Se obtuvo un resultado de ' + responseData.successRT + ' RT';
-                document.getElementById('animation').style.display = 'none';
+
+                changeModalStatusToEnd(tweetURLField, submitButton, status, message, responseData.successRT);
+
             }
 
             function isValidTwitterURL(url) {
