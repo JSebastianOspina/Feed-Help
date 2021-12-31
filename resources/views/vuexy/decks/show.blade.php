@@ -241,30 +241,54 @@
         <!-- / create app modal -->
 
 
+        <!-- show error modal  -->
+        <div class="modal fade modal-danger" id="errorModal" tabindex="-1" aria-labelledby="addNewCardTitle"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-fullscreen">
+                <div class="modal-content">
+                    <div class="modal-header bg-transparent">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body px-sm-5 mx-50 pb-5">
+                        <div class="d-flex flex-column justify-content-center h-100">
+                            <h1 class="text-center " id="addNewCardTitle">¡Upa, ha ocurrido un error!</h1>
+                            <h3 class="text-left mt-2">
+                                Nuestro equipo de monos se encontraba trabajando fuertemente en tu petición ...
+                            </h3>
+                            <h3 class="text-left my-1">
+                                Sin embargo, el mono negro de la derecha detectó un error.
+                            </h3>
+                            <div class="w-md-50 text-center">
+                                <img src="https://i.giphy.com/media/xT5LMrxYauvZhhzL6U/giphy.webp" alt=""
+                                     class="img-fluid">
+                            </div>
+
+                            <h3 class="text-left mt-2">
+                                El mono dijo:
+                            </h3>
+                            <h4 id="errorMessage">....</h4>
+                            <div class="d-flex justify-content-center mt-1">
+                                <button type="button" class="btn btn-danger waves-effect waves-float waves-light"
+                                        data-bs-dismiss="modal">Entendido, gracias
+                                </button>
+                            </div>
+                        </div>
+
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!--/  show error modal  -->
+
         <!-- TERMINA LA SECCIÓN DE LOS MODALES-->
 
         <script>
-            async function makeRT() {
-                let tweetURLField = document.getElementById('tweetId');
-                let tweetId = tweetURLField.value;
-
-                if (tweetId === '') {
-                    alert('Debes ingresar una URL de Twitter Valida');
-                    return;
-                }
-                let status = document.getElementById('status');
-                let message = document.getElementById('message');
-                let submitButton = document.getElementById('submitButton');
-
-                tweetURLField.setAttribute('readonly', 'true');
-                submitButton.setAttribute('disabled', 'disabled');
-                status.innerText = 'Procesando petición';
-                message.innerText = 'Estamos trabajando en tu Tweet, pronto verás los resultados...';
-
-                //Realizar la petición
+            async function makeRTRequest(tweetUrl) {
                 let url = '{{route('makeRT')}}';
                 let data = {
-                    'tweetURL': tweetId,
+                    'tweetURL': tweetUrl,
                     'deckId': {{$deck->id}},
                     '_token': '{{csrf_token()}}'
                 }
@@ -276,10 +300,65 @@
                     body: JSON.stringify(data)
                 });
                 let responseData = await response.json();
+                return responseData;
+            }
 
+            async function makeRT() {
+
+
+                //Capture all necessary DOM documents.
+
+                let tweetURLField = document.getElementById('tweetId');
+                let status = document.getElementById('status');
+                let message = document.getElementById('message');
+                let submitButton = document.getElementById('submitButton');
+                let errorMessage = document.getElementById('errorMessage');
+                let retweetModal = new bootstrap.Modal(document.getElementById('RTModal'));
+
+                let tweetUrl = tweetURLField.value;
+                if (!isValidTwitterURL(tweetUrl)) {
+                    let errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                    errorMessage.innerText = '"Debes introducir una URL de un tweet válido"';
+                    errorModal.show();
+                    return;
+                }
+
+
+                //Change the status to processing
+                tweetURLField.setAttribute('readonly', 'true');
+                submitButton.setAttribute('disabled', 'disabled');
+                status.innerText = 'Procesando petición';
+                message.innerText = 'Estamos trabajando en tu Tweet, pronto verás los resultados...';
+
+                //Realizar la petición
+                let responseData = await makeRTRequest(tweetUrl);
+
+                //Check for errors
+                if (responseData.error === true) {
+                    let errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                    errorMessage.innerText = '"' + responseData.message + '"';
+                    errorModal.show();
+                    retweetModal.toggle()
+                    return;
+                }
                 status.innerText = 'Retweet finalizado';
                 message.innerText = 'Se obtuvo un resultado de ' + responseData.successRT + ' RT';
                 document.getElementById('animation').style.display = 'none';
+            }
+
+            function isValidTwitterURL(url) {
+
+                try {
+                    let tweetUrl = new URL(url);
+                    if (!tweetUrl.host.includes('twitter')) {
+                        return false;
+                    }
+                } catch (_) {
+
+                    return false;
+                }
+
+                return true;
             }
         </script>
     @endif

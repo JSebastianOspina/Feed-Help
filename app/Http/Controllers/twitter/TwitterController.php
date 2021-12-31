@@ -6,7 +6,6 @@ use Abraham\TwitterOAuth\TwitterOAuth;
 use App\Api;
 use App\Blockeduser;
 use App\Deck;
-use App\Decks_user;
 use App\DeckUser;
 use App\Http\Controllers\Controller;
 use App\Record;
@@ -101,13 +100,13 @@ class TwitterController extends Controller
 
 
         // Check if the user has already authorize all apis in order to active it account.
-        $this->checkIfTwitterAccountHasAllApis($twitterAccount);
+        $this->checkIfTwitterAccountHasAllApis($twitterAccount, $api->deck->id);
 
         //Redirect to view
         return redirect()->route('decks.apis.verify', ['deckId' => $api->deck->id]);
     }
 
-    public function getAccountExtraInfo($username)
+    public function getAccountExtraInfo($username): array
     {
         $profile = $this->getUserProfile($username);
 
@@ -169,19 +168,21 @@ class TwitterController extends Controller
         return ($result->guest_token);
     }
 
-    private function checkIfTwitterAccountHasAllApis(TwitterAccount $twitterAccount)
+    private function checkIfTwitterAccountHasAllApis(TwitterAccount $twitterAccount, int $deckId)
     {
-        $apisCount = DB::table('apis')->select('id')->where('deck_id', $api->deck->id)->count();
+        $apisCount = DB::table('apis')->select('id')->where('deck_id', $deckId)->count();
         $twitterAccountsCount = DB::table('twitter_account_apis')
             ->where('twitter_account_id', $twitterAccount->id)
             ->where('isActive', 1)
             ->count();
 
         if ($apisCount === $twitterAccountsCount) {
-
             $twitterAccount->status = 'active';
-            $twitterAccount->save();
+        } else {
+            $twitterAccount->status = 'pending';
         }
+        $twitterAccount->save();
+
 
     }
 
@@ -192,81 +193,6 @@ class TwitterController extends Controller
         $guardar->twitter = "";
         $guardar->save();
         echo "<script>window.close();</script>";
-    }
-
-    public function master(Request $request)
-    {
-        $contador = 0;
-        $total = 0;
-        $quienes = [];
-        $no = "";
-        $allDecks = Deck::find($request->deck_list);
-        if (Auth::user()->hasRole('Owner')) {
-
-            // $allDecks = Deck::all();
-            foreach ($allDecks as $aux) {
-
-                $consumer_key = $aux->crearkey;
-                $consumer_secret = $aux->crearsecret;
-
-                $tweet = $request->input('rtid');
-                $deck_name = $aux->nombre;
-                $guardarr = Decks_user::where(['nombredeck' => $deck_name])->get();
-
-                foreach ($guardarr as $guardar) {
-                    $access_token = [];
-                    $access_token['oauth_token'] = $guardar->crearkey;
-                    $access_token['oauth_token_secret'] = $guardar->crearsecret;
-                    $connection = new TwitterOAuth($consumer_key, $consumer_secret, $access_token['oauth_token'], $access_token['oauth_token_secret']);
-
-                    $statues = $connection->post("statuses/retweet", ["id" => $tweet]);
-
-                    if ($this::isError($statues) == "no") {
-                        $contador++;
-                    } else {
-                        $no = $no . $guardar->twitter . ",";
-                        $c = new \stdClass();
-                        $c->twitter = $guardar->twitter;
-                        $c->codigo = $statues->errors[0]->code;
-                        $c->mensaje = $statues->errors[0]->message;
-                        array_push($quienes, $c);
-                    }
-                    $total++;
-                }
-
-                $registro = new Rt;
-                $registro->rtid = $tweet;
-                $registro->deck = $deck_name;
-                $registro->cuenta = Auth::user()->username;
-                $registro->twitter = $no; //TERMINAR
-                $registro->cantidad = $contador . '/' . $total;
-                $registro->quienes = serialize($quienes);
-                //If checked, we dont put is at pendient, so it is not deleted;
-                $request->delete == 1 ? $registro->pendiente = 'Si' : $registro->pendiente = 'No';
-                $registro->minutos = $request->minutos;
-                $registro->save();
-            }
-
-            return back()->with('total', $contador . '/' . $total);
-        }
-    }
-
-    public function isError($responseObject): bool
-    {
-        if (isset($objeto->errors[0]->message)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    public function testrt(Request $request)
-    {
-        $actual = Carbon::now();
-        $ultimo = Rt::find(23839);
-        $dif = $ultimo->created_at->diffInMinutes($actual);
-        $respuesta = "Actual {$actual}, ultimo {$ultimo->updated_at}, diferecia = {$dif} ";
-        return $respuesta;
     }
 
     public function makeRT(Request $request)
@@ -286,6 +212,7 @@ class TwitterController extends Controller
 
             return $this->RTFromOwner($request); // Makes the Rt if the user is an Owner
         }
+
         /* THE REQUEST VERIFICATION STARTS */
 
         //Verify if the user belongs to the deck
@@ -332,11 +259,11 @@ class TwitterController extends Controller
                 ]);
         }
 
-        //CHeck if the deck has apis attached
+        //Check if the deck has apis attached
         if (count($apis) === 0) {
             return response()->json(['error' => true, 'message' => 'El deck no tiene apis registradas para dar RT']);
         }
-
+        //Ends verification
 
         //Get all twitter accounts attached to that api
         $twitterAccountsApis = $selectedApi->twitterAccountApis;
@@ -352,12 +279,17 @@ class TwitterController extends Controller
             //Create api connection and make RT post request
             $apiConnection = new TwitterOAuth($selectedApi->key, $selectedApi->secret, $twitterAccountApi->key, $twitterAccountApi->secret);
             $response = $apiConnection->post("statuses/retweet", ["id" => $tweetId]);
+
             if ($this->isError($response) === false) {
+
                 //The request doesn't have errors, let's count it
                 $successRt++;
             } else {
                 //Store the information from the accounts that didn't RT
                 $this->handleErrorInformation($twitterAccountApi, $notRtBy, $response, $extraInfo);
+
+                // Check if the user has already authorize all apis in order to active it account.
+                $this->checkIfTwitterAccountHasAllApis($userTwitterAccount, $deck->id);
             }
         }
 
@@ -424,6 +356,15 @@ class TwitterController extends Controller
         $registro->save();
 
         return back()->with('total', $contador . '/' . $total);
+    }
+
+    public function isError($responseObject): bool
+    {
+        if (isset($responseObject->errors[0]->message)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
