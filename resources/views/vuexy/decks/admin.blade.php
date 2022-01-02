@@ -59,7 +59,7 @@
                                         </li>
 
                                         <li class="mb-75">
-                                            <span class="fw-bolder me-25">RT/H:</span>
+                                            <span class="fw-bolder me-25">Minutos para RT:</span>
                                             <span>{{$deck->rt_minutes}}</span>
                                         </li>
                                         <li class="mb-75">

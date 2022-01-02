@@ -188,12 +188,19 @@ class TwitterController extends Controller
 
     public function makeRT(Request $request)
     {
-
+        if (session('isTweeting') === true) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Ya tienes un tweet en proceso de RT'
+            ]);
+        }
+        session(['isTweeting' => true]);
         //Define useful variables
         $deckId = $request->input('deckId');
         $user = auth()->user();
 
         if (!$user) {
+            session(['isTweeting' => false]);
             abort(403);
         }
 
@@ -207,10 +214,8 @@ class TwitterController extends Controller
             ->where('type', 'rt')
             ->get();
 
-
         //Pick a random api
         $selectedApi = $apis->random();
-
 
         /* ---------- THE REQUEST VERIFICATION STARTS --------*/
 
@@ -274,7 +279,7 @@ class TwitterController extends Controller
 
         //Save the record
         $this->createNewTweetRecord($request, $tweetId, $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
-
+        session(['isTweeting' => false]);
         return response()->json(['successRT' => $successRt . '/' . $totalTwitterAccountsApis]);
     }
 
@@ -282,6 +287,8 @@ class TwitterController extends Controller
     {
 
         if (!($user->belongsToDeck($deckId))) {
+            session(['isTweeting' => false]);
+
             response()->json([
                 'error' => true,
                 'message' => 'Estas tratando de dar RT a un deck a el que no perteneces'
@@ -292,7 +299,10 @@ class TwitterController extends Controller
 
     private function verifyIfDeckHasApis($apis): void
     {
+
         if (count($apis) === 0) {
+            session(['isTweeting' => false]);
+
             response()->json(['error' => true, 'message' => 'El deck no tiene apis registradas para dar RT'])->send();
             die();
         }
@@ -300,7 +310,10 @@ class TwitterController extends Controller
 
     private function verifyIfUserHasTwitterAccountsInTheDeck($userTwitterAccount): void
     {
+
         if ($userTwitterAccount === null) {
+            session(['isTweeting' => false]);
+
             response()->json(
                 [
                     'error' => true,
@@ -313,7 +326,10 @@ class TwitterController extends Controller
 
     private function verifyIfUserTwitterAccountStatusIsActive($userTwitterAccount): void
     {
+
         if ($userTwitterAccount->status !== 'active') {
+            session(['isTweeting' => false]);
+
             response()->json(
                 [
                     'error' => true,
@@ -331,6 +347,8 @@ class TwitterController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
         if ($lastRecord->count() > 0) {
+            session(['isTweeting' => false]);
+
             $nextHour = Carbon::parse($lastRecord[0]->created_at)->addMinutes($deck->rt_minutes);
             $remainingMinutes = $nextHour->diffInMinutes(Carbon::now());
 
