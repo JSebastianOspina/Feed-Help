@@ -69,6 +69,7 @@ class DeckController extends Controller
 
         //Assign permissions
         $deckAdmin->decks()->attach($deck->id, ['role' => 'owner']);
+        auth()->user()->decks()->attach($deck->id, ['role' => 'owner']);
 
         return back()->withErrors('Deck creado exitosamente');
 

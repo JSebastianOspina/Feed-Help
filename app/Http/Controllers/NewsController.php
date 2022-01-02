@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Deck;
 use App\News;
 use App\System;
 use Illuminate\Http\Request;
@@ -24,7 +25,8 @@ class NewsController extends Controller
                 'same_tweet_id_minutes' => 15,
             ];
         }
-        return view('vuexy.news.index', compact('news', 'system'));
+        $decks = Deck::all();
+        return view('vuexy.news.index', compact('news', 'system','decks'));
 
 
     }

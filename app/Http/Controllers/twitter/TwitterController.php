@@ -4,11 +4,9 @@ namespace App\Http\Controllers\twitter;
 
 use Abraham\TwitterOAuth\TwitterOAuth;
 use App\Api;
-use App\Deck;
 use App\DeckUser;
 use App\Http\Controllers\Controller;
 use App\Record;
-use App\Rt;
 use App\TwitterAccount;
 use App\TwitterAccountApi;
 use Carbon\Carbon;
@@ -16,7 +14,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use stdClass;
 
 require 'twitteroauth/autoload.php';
 
@@ -209,11 +206,6 @@ class TwitterController extends Controller
             session(['isTweeting' => false]);
             abort(403);
         }
-
-        //Check if is owner, for not limiting any characteristic
-        /*  if (!$user->isOwner()) {
-              return $this->RTFromOwner($request); // Makes the Rt if the user is an Owner
-          }*/
 
         //Get all RT deck's apis
         $apis = Api::where('deck_id', $deckId)
@@ -473,122 +465,96 @@ class TwitterController extends Controller
         ]);
     }
 
-    public function darRT(Request $request)
+
+    public function masterRT(Request $request)
     {
 
-        if (Auth::user()->hasRole('Owner')) {
 
-            return $this->RTFromOwner($request); // Makes the Rt if the user is an Owner
+        $tweetId = $this->getTweetId($request);
+
+        $this->verifyIfTweetHasAlreadyBeenTweeted($tweetId);
+
+        //Define useful variables
+        $deckId = $request->input('deckId');
+        $user = auth()->user();
+
+        if (!$user) {
+            session(['isTweeting' => false]);
+            abort(403);
         }
 
-        //Check if user is blocked.
+        //Get all RT deck's apis
+        $apis = Api::where('deck_id', $deckId)
+            ->where('type', 'rt')
+            ->get();
 
-        if ($this->isBlocked(Auth::user()->username, $request->input('deckname')) && !(Auth::user()->hasRole('consentido'))) {
-            return back()->withErrors('Ups! parece que se cayó una de tus apis, por favor, re-vincula.');
-        }
+        //Pick a random api
+        $selectedApi = $apis->random();
 
-        //Get Twitter Object.
-        $causante = Decks_user::where([['username', Auth::user()->username], ['nombredeck', $request->input('deckname')]])->first();
 
-        //Check if user is time restricted
-        if ($this->isTimeRestricted($causante->username, $request->input('deckname'))) {
-            return back()->withErrors('Haz alcanzado el máximo de RT/H');
-        }
+        /* ---------- THE REQUEST VERIFICATION STARTS --------*/
 
-        //Check if user has not aprobe it's apis.
-        if ($causante->crearsecret == null || $causante->twitter == "") {
-            return back()->withErrors('¿Estas tratando de dar RT sin tener apis aprobadas?');
-        } else {
-            //There is no error, user is ready for having it's RT.
-            $aux = Deck::where('nombre', str_replace('_', ' ', $request->input('deckname')))->first();
+        /* User permissions verification starts */
 
-            if ($aux->api3key == null) {
-                $consumer_key = $aux->crearkey;
-                $consumer_secret = $aux->crearsecret;
+        //Verify if the user belongs to the deck
+        $this->verifyIfUserBelongsToTheDeck($user, $deckId);
+
+        /* Deck verification starts */
+        //Check if the deck has apis attached
+        $this->verifyIfDeckHasApis($apis);
+
+        /*TwitterAccount verification starts, first retrieve it */
+        $userTwitterAccount = TwitterAccount::where('deck_id', $deckId)
+            ->where('user_id', $user->id)
+            ->first();
+
+        // Verify if the user has a twitter account attach to the deck
+        $this->verifyIfUserHasTwitterAccountsInTheDeck($userTwitterAccount);
+
+        //Verify if the user's twitter account has all apis
+        $this->verifyIfUserTwitterAccountStatusIsActive($userTwitterAccount);
+
+        /* Business logic verification starts */
+
+        $deck = $selectedApi->deck;
+
+
+        //Check if user is time restricted in the current deck
+        $this->verifyIfUserIsTimeRestricted($user, $deck);
+
+        /* ---------- THE REQUEST VERIFICATION ENDS --------*/
+
+        //Get all twitter accounts attached to that api
+        $twitterAccountsApis = $selectedApi->twitterAccountApis;
+
+        //Start a counter in order to track the successfully RT
+        $totalTwitterAccountsApis = $twitterAccountsApis->count();
+        $successRt = 0;
+        $notRtBy = '';
+        $extraInfo = [];
+        //iterate over all accounts and make the rt from there
+        foreach ($twitterAccountsApis as $twitterAccountApi) {
+            //Create api connection and make RT post request
+            $apiConnection = new TwitterOAuth($selectedApi->key, $selectedApi->secret, $twitterAccountApi->key, $twitterAccountApi->secret);
+            $response = $apiConnection->post("statuses/retweet", ["id" => $tweetId]);
+
+            if ($this->isError($response) === false) {
+
+                //The request doesn't have errors, let's count it
+                $successRt++;
             } else {
-                if ($aux->numero == null | $aux->numero == 1) {
-                    $consumer_key = $aux->crearkey;
-                    $consumer_secret = $aux->crearsecret;
-                    $aux->numero = 2;
-                    $controlador = $aux->numero;
-                    $aux->save();
-                } else {
-                    $consumer_key = $aux->api3key;
-                    $consumer_secret = $aux->api3secret;
-                    $aux->numero = 1;
-                    $aux->save();
-                }
+                //Store the information from the accounts that didn't RT
+                $this->handleErrorInformation($twitterAccountApi, $notRtBy, $response, $extraInfo);
+
+                // Check if the user has already authorize all apis in order to active it account.
+                $this->checkIfTwitterAccountHasAllApis($userTwitterAccount, $deck->id);
             }
-
-            $controlador = $aux->numero;
-
-            $tweet = $request->input('rtid');
-            $deck_name = $request->input('deckname');
-            $guardarr = Decks_user::where(['nombredeck' => $deck_name])->get();
-            $contador = 0;
-            $total = 0;
-            $quienes = [];
-            $no = "";
-            foreach ($guardarr as $guardar) {
-
-                $access_token = [];
-                if ($controlador == 2) {
-                    $access_token['oauth_token'] = $guardar->crearkey;
-                    $access_token['oauth_token_secret'] = $guardar->crearsecret;
-                } elseif ($controlador == null) {
-
-                    $access_token['oauth_token'] = $guardar->crearkey;
-                    $access_token['oauth_token_secret'] = $guardar->crearsecret;
-                } else {
-
-                    $access_token['oauth_token'] = $guardar->api3key;
-                    $access_token['oauth_token_secret'] = $guardar->api3secret;
-                }
-
-                $connection = new TwitterOAuth($consumer_key, $consumer_secret, $access_token['oauth_token'], $access_token['oauth_token_secret']);
-
-                $statues = $connection->post("statuses/retweet", ["id" => $tweet]);
-
-                if ($this->isError($statues) == "no") {
-                    $contador++;
-                } else {
-                    $no = $no . $guardar->twitter . ",";
-                    $c = new stdClass();
-                    $c->twitter = $guardar->twitter;
-                    $c->codigo = $statues->errors[0]->code;
-                    $c->mensaje = $statues->errors[0]->message;
-                    array_push($quienes, $c);
-
-                    //Verificar si no tiene api aprobada, lo guarda en la base de datos.
-                    $this::checkAndSaveIfInvalidOrExpiredToken($guardar->username, $deck_name, $statues->errors[0]->code);
-                }
-                $total++;
-            }
-
-            //Save to the historial.
-            $registro = new Rt;
-            $registro->rtid = $tweet;
-            $registro->deck = $deck_name;
-            $registro->cuenta = Auth::user()->username;
-            $registro->twitter = $no; //TERMINAR
-            $registro->pendiente = "Si";
-            $registro->cantidad = $contador . '/' . $total;
-            $registro->quienes = serialize($quienes);
-            $registro->save();
-
-            return back()->with('total', $contador . '/' . $total);
         }
-    }
 
-    /**
-     * RTFrom Owner. Same darRT method but has not time restriction or api dependence.
-     *
-     * @param Request $request
-     * @return void
-     */
-    public function RTFromOwner(Request $request)
-    {
-        //todo: implement method
+        //Save the record
+        $this->createNewTweetRecord($request, $tweetId, $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
+        session(['isTweeting' => false]);
+        return response()->json(['successRT' => $successRt . '/' . $totalTwitterAccountsApis]);
     }
 
     public function unrt()
