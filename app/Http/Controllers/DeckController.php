@@ -38,7 +38,7 @@ class DeckController extends Controller
 
     public function edit($deckId)
     {
-        $deck = Deck::where('id',$deckId)->with(['twitterAccounts', 'apis'])->first();
+        $deck = Deck::where('id', $deckId)->with(['twitterAccounts', 'apis'])->first();
         return view('vuexy.decks.admin', compact('deck'));
     }
 
@@ -50,13 +50,15 @@ class DeckController extends Controller
         $validatedData = $request->validate([
             'icon' => 'required',
             'name' => 'required|unique:decks',
-            'admin_id' => 'required|integer',
+            'owner_username' => 'required|string',
             'rt_number' => 'required|numeric',
             'delete_minutes' => 'required|numeric',
         ]);
 
-        $deckAdmin = User::find($request->input('admin_id'));
-        if ($deckAdmin !== null) {
+        $deckAdmin = User::where('username', $request->input('owner_username'))->first();
+        if ($deckAdmin === null) {
+            return back()->withErrors('El nombre de usuario proporcionado no existe');
+        } else {
             $deck = Deck::create([
                 'name' => $request->input('name'),
                 'icon' => $request->input('icon'),

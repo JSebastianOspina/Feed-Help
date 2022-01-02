@@ -46,14 +46,9 @@
                             @csrf
                             <label class="form-control-label" for="nombre">Nombre del deck</label>
                             <input type="text" class="form-control" name="name" id="name">
-                            <label class="form-control-label" for="admin_id">Administrador</label>
-                            <select class="form-select form-control"
-                                    id="admin_id" name="admin_id">
-                                @foreach($users as $user)
-                                    <option value="{{$user->id}}">{{$user->name}}</option>
-                                @endforeach
+                            <label class="form-control-label" for="owner_username">Administrador</label>
+                            <input type="text" class="form-control" name="owner_username" id="owner_username">
 
-                            </select>
 
                             <label class="form-control-label" for="rt_number">Cantidad RT/H</label>
                             <input type="number" class="form-control" name="rt_number" id="rt_number" value="1"

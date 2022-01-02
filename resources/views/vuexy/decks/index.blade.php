@@ -59,34 +59,6 @@
                                     <td>{{$deck->delete_minutes}}</td>
                                     <td>{{$deck->owner_name}}</td>
 
-<!--                                    <td>
-                                        <div class="avatar-group">
-                                            <div data-bs-toggle="tooltip" data-popup="tooltip-custom"
-                                                 data-bs-placement="top"
-                                                 class="avatar pull-up my-0" title="Lilian Nenez">
-                                                <img
-                                                    src="{{asset('2.0/app-assets/images/portrait/small/avatar-s-5.jpg')}}"
-                                                    alt="Avatar"
-                                                    height="26" width="26"/>
-                                            </div>
-                                            <div data-bs-toggle="tooltip" data-popup="tooltip-custom"
-                                                 data-bs-placement="top"
-                                                 class="avatar pull-up my-0" title="Alberto Glotzbach">
-                                                <img
-                                                    src="{{asset('2.0/app-assets/images/portrait/small/avatar-s-6.jpg')}}"
-                                                    alt="Avatar"
-                                                    height="26" width="26"/>
-                                            </div>
-                                            <div data-bs-toggle="tooltip" data-popup="tooltip-custom"
-                                                 data-bs-placement="top"
-                                                 class="avatar pull-up my-0" title="Alberto Glotzbach">
-                                                <img
-                                                    src="{{asset('2.0/app-assets/images/portrait/small/avatar-s-7.jpg')}}"
-                                                    alt="Avatar"
-                                                    height="26" width="26"/>
-                                            </div>
-                                        </div>
-                                    </td>-->
                                 </tr>
                             @endforeach
 
@@ -127,14 +99,8 @@
                             </div>
 
                             <div class="col-12">
-                                <label class="form-label" for="admin_id">Administrador</label>
-                                <select class="form-select form-control"
-                                        id="admin_id" name="admin_id">
-                                    @foreach($users as $user)
-                                        <option value="{{$user->id}}">{{$user->name}}</option>
-                                    @endforeach
-
-                                </select>
+                                <label class="form-control-label" for="owner_username">Administrador</label>
+                                <input type="text" class="form-control" name="owner_username" id="owner_username">
                             </div>
 
                             <div class="col-12">
