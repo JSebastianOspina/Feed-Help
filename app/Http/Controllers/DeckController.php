@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Api;
 use App\Deck;
+use App\Record;
 use App\Rt;
 use App\System;
 use App\TwitterAccount;
@@ -37,7 +38,7 @@ class DeckController extends Controller
 
     public function edit($deckId)
     {
-        $deck = Deck::find($deckId)->with(['twitterAccounts', 'apis'])->first();
+        $deck = Deck::where('id',$deckId)->with(['twitterAccounts', 'apis'])->first();
         return view('vuexy.decks.admin', compact('deck'));
     }
 
@@ -474,5 +475,22 @@ class DeckController extends Controller
             }
         }
         return ['rtApis' => $rtApis, 'deleteApis' => $deleteApis];
+    }
+
+    /* DECK RECORDS */
+
+    public function getRecords($deckId)
+    {
+        $records = Record::where('deck_id', $deckId)->get();
+        return view('vuexy.decks.records.index', compact('records', 'deckId'));
+
+    }
+
+    public function showRecord($deckId, $recordId)
+    {
+        $records = Record::where('deck_id', $deckId)->latest()->first();
+        $details = unserialize($records->extra_info);
+        return view('vuexy.decks.records.show', compact('details', 'deckId'));
+
     }
 }

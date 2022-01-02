@@ -34,9 +34,11 @@
     <!-- BEGIN: Page CSS-->
     <link rel="stylesheet" type="text/css"
           href="{{asset('2.0/app-assets/css/core/menu/menu-types/vertical-menu.css')}}">
-    <link rel="stylesheet" type="text/css" href="{{asset('2.0/app-assets/css/pages/dashboard-ecommerce.css')}}">
+
     <link rel="stylesheet" type="text/css"
           href="{{asset('2.0/app-assets/css/plugins/extensions/ext-component-toastr.css')}}">
+
+@yield('head')
     <!-- END: Page CSS-->
 
     <!-- BEGIN: Custom CSS-->

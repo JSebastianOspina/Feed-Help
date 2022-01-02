@@ -44,16 +44,23 @@ Route::patch('decks/{deckId}/apis/{apiId}', 'DeckController@updateApi')->middlew
 Route::delete('decks/{deckId}/apis/{apiId}', 'DeckController@deleteApi')->middleware('auth')->name('decks.apis.delete');
 
 /* ---------------APIS - Twitter Acoounts --------------- */
+
 /* Ver estado actual de las apis(user) */
 Route::get('decks/{deckId}/apis', 'DeckController@verifyUserApis')->middleware('auth')->name('decks.apis.verify');
 /* Re/autorizar una api */
 Route::post('apis/authorize', 'twitter\TwitterController@buildAuthorizeURL')->middleware('auth')->name('decks.apis.authorize');
 /* Hacer RT */
-Route::get('/makeRT', 'twitter\TwitterController@makeRT')->middleware('auth')->name('makeRT');
-
 Route::post('/makeRT', 'twitter\TwitterController@makeRT')->middleware('auth')->name('makeRT');
 
+/* --------------- Historial del Deck --------------- */
+
+/* Ver estado actual de las apis(user) */
+Route::get('decks/{deckId}/records', 'DeckController@getRecords')->middleware('auth')->name('decks.records');
+Route::get('decks/{deckId}/records/{recordId}', 'DeckController@showRecord')->middleware('auth')->name('decks.records.show');
+
 Route::get('/theme', function () {
+    response()->json(['works']);
+
     $lastRecord = Record::where('username', 'crazysebas')
         ->where('deck_id', 1)
         ->where('created_at', '>=', Carbon::now()->subHour())

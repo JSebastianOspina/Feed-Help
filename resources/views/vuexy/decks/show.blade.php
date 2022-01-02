@@ -17,6 +17,10 @@
                     <i data-feather="settings"></i>
                     <span>Gestionar apis</span>
                 </a>
+                <a class="btn btn-primary btn-sm me-1" href="{{route('decks.records',['deckId'=>$deck->id])}}">
+                    <i data-feather="book-open"></i>
+                    <span>Historial del Deck</span>
+                </a>
                 @if(auth()->user()->isOwner())
                     <a class="btn btn-primary btn-sm" href="{{route('decks.edit',['deck'=>$deck->id])}}">
                         <i data-feather="tool"></i>
@@ -178,229 +182,229 @@
             </div>
         </div>
         <!--/ add new card modal  -->
+    @endif
+    <!-- create app modal -->
+    <div class="modal fade" id="RTModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-transparent">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pb-3 px-sm-3">
+                    <h1 class="text-center mb-1" id="createAppTitle">Dar un nuevo Retweet</h1>
+                    <p class="text-center mb-2">Este Tweet será publicado en todas las cuentas activas del Deck</p>
 
-        <!-- create app modal -->
-        <div class="modal fade" id="RTModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header bg-transparent">
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body pb-3 px-sm-3">
-                        <h1 class="text-center mb-1" id="createAppTitle">Dar un nuevo Retweet</h1>
-                        <p class="text-center mb-2">Este Tweet será publicado en todas las cuentas activas del Deck</p>
+                    <!-- content -->
 
-                        <!-- content -->
-
-                        <div class="d-flex flex-column justify-content-center" role="tabpanel">
-                            <div>
-                                <label for="tweetId" class="mb-1">URL del Tweet </label>
-                                <input class="form-control" type="text"
-                                       placeholder="https://twitter.com/iMensajex/status/1394837941264990211"
-                                       id="tweetId" name="tweetId"/>
-                            </div>
+                    <div class="d-flex flex-column justify-content-center" role="tabpanel">
+                        <div>
+                            <label for="tweetId" class="mb-1">URL del Tweet </label>
+                            <input class="form-control" type="text"
+                                   placeholder="https://twitter.com/iMensajex/status/1394837941264990211"
+                                   id="tweetId" name="tweetId"/>
+                        </div>
 
 
-                            <h5 class="mt-2 pt-1">Estado actual</h5>
-                            <div class="d-flex justify-content-between">
-                                <div class="d-flex">
+                        <h5 class="mt-2 pt-1">Estado actual</h5>
+                        <div class="d-flex justify-content-between">
+                            <div class="d-flex">
                                        <span class="avatar avatar-tag bg-light-info me-1" id="test">
                                            <i data-feather="clock" class="font-medium-5" id="icon"></i>
                                        </span>
-                                    <div class="d-flex flex-column">
+                                <div class="d-flex flex-column">
                                          <span class="h5 d-block fw-bolder" id="status">
                                              En espera de tweet
                                          </span>
-                                        <span id="message">
+                                    <span id="message">
                                             Por favor, introduce la URL del tweet para empezar
                                         </span>
-                                    </div>
+                                </div>
 
-                                </div>
-                                <div>
-                                    <div
-                                        class="spinner-grow spinner-grow-sm  text-success me-50"
-                                        style="animation-duration: 1s" id="animation"></div>
-                                </div>
                             </div>
-
-                            <div class="d-flex justify-content-end mt-2">
-
-                                <button class="btn btn-primary btn-next" onclick="resetModal()" id="resetButton"
-                                        style="display: none">
-                                    <span class="align-middle d-sm-inline-block d-none">Hacer otro RT</span>
-                                    <i data-feather="arrow-right" class="align-middle ms-sm-25 ms-0"></i>
-                                </button>
-
-                                <button class="btn btn-primary btn-next" onclick="makeRT()" id="submitButton">
-                                    <span class="align-middle d-sm-inline-block d-none">Hacer RT</span>
-                                    <i data-feather="arrow-right" class="align-middle ms-sm-25 ms-0"></i>
-                                </button>
+                            <div>
+                                <div
+                                    class="spinner-grow spinner-grow-sm  text-success me-50"
+                                    style="animation-duration: 1s" id="animation"></div>
                             </div>
                         </div>
 
+                        <div class="d-flex justify-content-end mt-2">
 
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- / create app modal -->
+                            <button class="btn btn-primary btn-next" onclick="resetModal()" id="resetButton"
+                                    style="display: none">
+                                <span class="align-middle d-sm-inline-block d-none">Hacer otro RT</span>
+                                <i data-feather="arrow-right" class="align-middle ms-sm-25 ms-0"></i>
+                            </button>
 
-
-        <!-- show error modal  -->
-        <div class="modal fade modal-danger" id="errorModal" tabindex="-1" aria-labelledby="addNewCardTitle"
-             aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-fullscreen">
-                <div class="modal-content">
-                    <div class="modal-header bg-transparent">
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body px-sm-5 mx-50 pb-5">
-                        <div class="d-flex flex-column justify-content-center h-100">
-                            <h1 class="text-center " id="addNewCardTitle">¡Upa, ha ocurrido un error!</h1>
-                            <h3 class="text-left mt-2">
-                                Nuestro equipo de monos se encontraba trabajando fuertemente en tu petición ...
-                            </h3>
-                            <h3 class="text-left my-1">
-                                Sin embargo, el mono negro de la derecha detectó un error.
-                            </h3>
-                            <div class="w-md-50 text-center">
-                                <img src="https://i.giphy.com/media/xT5LMrxYauvZhhzL6U/giphy.webp" alt=""
-                                     class="img-fluid">
-                            </div>
-
-                            <h3 class="text-left mt-2">
-                                El mono dijo:
-                            </h3>
-                            <h4 id="errorMessage">....</h4>
-                            <div class="d-flex justify-content-center mt-1">
-                                <button type="button" class="btn btn-danger waves-effect waves-float waves-light"
-                                        data-bs-dismiss="modal">Entendido, gracias
-                                </button>
-                            </div>
+                            <button class="btn btn-primary btn-next" onclick="makeRT()" id="submitButton">
+                                <span class="align-middle d-sm-inline-block d-none">Hacer RT</span>
+                                <i data-feather="arrow-right" class="align-middle ms-sm-25 ms-0"></i>
+                            </button>
                         </div>
-
-
                     </div>
+
 
                 </div>
             </div>
         </div>
-        <!--/  show error modal  -->
+    </div>
+    <!-- / create app modal -->
 
-        <!-- TERMINA LA SECCIÓN DE LOS MODALES-->
 
-        <script>
-            async function makeRTRequest(tweetUrl) {
-                let url = '{{route('makeRT')}}';
-                let data = {
-                    'tweetURL': tweetUrl,
-                    'deckId': {{$deck->id}},
-                    '_token': '{{csrf_token()}}'
-                }
-                let response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                });
-                return await response.json();
+    <!-- show error modal  -->
+    <div class="modal fade modal-danger" id="errorModal" tabindex="-1" aria-labelledby="addNewCardTitle"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header bg-transparent">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-sm-5 mx-50 pb-5">
+                    <div class="d-flex flex-column justify-content-center h-100">
+                        <h1 class="text-center " id="addNewCardTitle">¡Upa, ha ocurrido un error!</h1>
+                        <h3 class="text-left mt-2">
+                            Nuestro equipo de monos se encontraba trabajando fuertemente en tu petición ...
+                        </h3>
+                        <h3 class="text-left my-1">
+                            Sin embargo, el mono negro de la derecha detectó un error.
+                        </h3>
+                        <div class="w-md-50 text-center">
+                            <img src="https://i.giphy.com/media/xT5LMrxYauvZhhzL6U/giphy.webp" alt=""
+                                 class="img-fluid">
+                        </div>
+
+                        <h3 class="text-left mt-2">
+                            El mono dijo:
+                        </h3>
+                        <h4 id="errorMessage">....</h4>
+                        <div class="d-flex justify-content-center mt-1">
+                            <button type="button" class="btn btn-danger waves-effect waves-float waves-light"
+                                    data-bs-dismiss="modal">Entendido, gracias
+                            </button>
+                        </div>
+                    </div>
+
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!--/  show error modal  -->
+
+    <!-- TERMINA LA SECCIÓN DE LOS MODALES-->
+
+    <script>
+        async function makeRTRequest(tweetUrl) {
+            let url = '{{route('makeRT')}}';
+            let data = {
+                'tweetURL': tweetUrl,
+                'deckId': {{$deck->id}},
+                '_token': '{{csrf_token()}}'
+            }
+            let response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            return await response.json();
+        }
+
+        function changeModalStatusToProcessing(tweetURLField, submitButton, status, message) {
+            tweetURLField.setAttribute('readonly', 'true');
+            submitButton.setAttribute('disabled', 'disabled');
+            status.innerText = 'Procesando petición';
+            message.innerText = 'Estamos trabajando en tu Tweet, pronto verás los resultados...';
+        }
+
+        function changeModalStatusToNewRT(tweetURLField, submitButton, status, message) {
+            tweetURLField.removeAttribute('readonly');
+            submitButton.removeAttribute('disabled');
+            status.innerText = 'En espera de tweet';
+            message.innerText = 'Por favor, introduce la URL del tweet para empezar';
+        }
+
+        function changeModalStatusToEnd(tweetURLField, submitButton, status, message, successRT) {
+            status.innerText = 'Retweet finalizado';
+            message.innerText = 'Se obtuvo un resultado de ' + successRT + ' RT';
+            document.getElementById('animation').style.display = 'none';
+            submitButton.style.display = 'none';
+            resetButton.style.display = 'block';
+        }
+
+        function resetModal() {
+            let tweetURLField = document.getElementById('tweetId');
+            let status = document.getElementById('status');
+            let message = document.getElementById('message');
+            let submitButton = document.getElementById('submitButton');
+            let resetButton = document.getElementById('resetButton');
+
+            tweetURLField.value = '';
+            submitButton.style.display = 'block';
+            resetButton.style.display = 'none';
+            document.getElementById('animation').style.display = 'block';
+
+            changeModalStatusToNewRT(tweetURLField, submitButton, status, message);
+
+        }
+
+        async function makeRT() {
+
+            //Capture all necessary DOM documents.
+
+            let tweetURLField = document.getElementById('tweetId');
+            let status = document.getElementById('status');
+            let message = document.getElementById('message');
+            let submitButton = document.getElementById('submitButton');
+            let resetButton = document.getElementById('resetButton');
+            let errorMessage = document.getElementById('errorMessage');
+            let retweetModal = bootstrap.Modal.getInstance((document.getElementById('RTModal')));
+
+            let tweetUrl = tweetURLField.value;
+            if (!isValidTwitterURL(tweetUrl)) {
+                let errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                console.log(errorModal)
+                errorMessage.innerText = '"Debes introducir una URL de un tweet válido"';
+                errorModal.show();
+                return;
             }
 
-            function changeModalStatusToProcessing(tweetURLField, submitButton, status, message) {
-                tweetURLField.setAttribute('readonly', 'true');
-                submitButton.setAttribute('disabled', 'disabled');
-                status.innerText = 'Procesando petición';
-                message.innerText = 'Estamos trabajando en tu Tweet, pronto verás los resultados...';
-            }
+            //Change the status to processing
+            changeModalStatusToProcessing(tweetURLField, submitButton, status, message);
 
-            function changeModalStatusToNewRT(tweetURLField, submitButton, status, message) {
-                tweetURLField.removeAttribute('readonly');
-                submitButton.removeAttribute('disabled');
-                status.innerText = 'En espera de tweet';
-                message.innerText = 'Por favor, introduce la URL del tweet para empezar';
-            }
+            //Realizar la petición
+            let responseData = await makeRTRequest(tweetUrl);
 
-            function changeModalStatusToEnd(tweetURLField, submitButton, status, message, successRT) {
-                status.innerText = 'Retweet finalizado';
-                message.innerText = 'Se obtuvo un resultado de ' + successRT + ' RT';
-                document.getElementById('animation').style.display = 'none';
-                submitButton.style.display = 'none';
-                resetButton.style.display = 'block';
-            }
-
-            function resetModal() {
-                let tweetURLField = document.getElementById('tweetId');
-                let status = document.getElementById('status');
-                let message = document.getElementById('message');
-                let submitButton = document.getElementById('submitButton');
-                let resetButton = document.getElementById('resetButton');
-
-                tweetURLField.value = '';
-                submitButton.style.display = 'block';
-                resetButton.style.display = 'none';
-                document.getElementById('animation').style.display = 'block';
-
+            //Check for errors
+            if (responseData.error === true) {
+                let errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                errorMessage.innerText = '"' + responseData.message + '"';
+                errorModal.show();
+                retweetModal.hide();
                 changeModalStatusToNewRT(tweetURLField, submitButton, status, message);
-
+                return;
             }
 
-            async function makeRT() {
+            changeModalStatusToEnd(tweetURLField, submitButton, status, message, responseData.successRT);
 
-                //Capture all necessary DOM documents.
+        }
 
-                let tweetURLField = document.getElementById('tweetId');
-                let status = document.getElementById('status');
-                let message = document.getElementById('message');
-                let submitButton = document.getElementById('submitButton');
-                let resetButton = document.getElementById('resetButton');
-                let errorMessage = document.getElementById('errorMessage');
-                let retweetModal = bootstrap.Modal.getInstance((document.getElementById('RTModal')));
+        function isValidTwitterURL(url) {
 
-                let tweetUrl = tweetURLField.value;
-                if (!isValidTwitterURL(tweetUrl)) {
-                    let errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
-                    console.log(errorModal)
-                    errorMessage.innerText = '"Debes introducir una URL de un tweet válido"';
-                    errorModal.show();
-                    return;
-                }
-
-                //Change the status to processing
-                changeModalStatusToProcessing(tweetURLField, submitButton, status, message);
-
-                //Realizar la petición
-                let responseData = await makeRTRequest(tweetUrl);
-
-                //Check for errors
-                if (responseData.error === true) {
-                    let errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
-                    errorMessage.innerText = '"' + responseData.message + '"';
-                    errorModal.show();
-                    retweetModal.hide();
-                    changeModalStatusToNewRT(tweetURLField, submitButton, status, message);
-                    return;
-                }
-
-                changeModalStatusToEnd(tweetURLField, submitButton, status, message, responseData.successRT);
-
-            }
-
-            function isValidTwitterURL(url) {
-
-                try {
-                    let tweetUrl = new URL(url);
-                    if (!tweetUrl.host.includes('twitter')) {
-                        return false;
-                    }
-                } catch (_) {
-
+            try {
+                let tweetUrl = new URL(url);
+                if (!tweetUrl.host.includes('twitter')) {
                     return false;
                 }
+            } catch (_) {
 
-                return true;
+                return false;
             }
-        </script>
-    @endif
+
+            return true;
+        }
+    </script>
+
 @endsection

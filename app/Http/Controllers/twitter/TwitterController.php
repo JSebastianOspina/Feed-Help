@@ -188,73 +188,65 @@ class TwitterController extends Controller
 
     public function makeRT(Request $request)
     {
+
+        //Define useful variables
+        $deckId = $request->input('deckId');
         $user = auth()->user();
 
+        if (!$user) {
+            abort(403);
+        }
+
+        //Check if is owner, for not limiting any characteristic
+        /*  if (!$user->isOwner()) {
+              return $this->RTFromOwner($request); // Makes the Rt if the user is an Owner
+          }*/
+
         //Get all RT deck's apis
-        $apis = Api::where('deck_id', $request->input('deckId'))
+        $apis = Api::where('deck_id', $deckId)
             ->where('type', 'rt')
             ->get();
+
+
         //Pick a random api
         $selectedApi = $apis->random();
 
 
-        //Check if is owner, for not limiting any characteristic
-        if (!$user->isOwner()) {
+        /* ---------- THE REQUEST VERIFICATION STARTS --------*/
 
-            return $this->RTFromOwner($request); // Makes the Rt if the user is an Owner
-        }
-
-        /* THE REQUEST VERIFICATION STARTS */
+        /* User permissions verification starts */
 
         //Verify if the user belongs to the deck
-        if ($user->getDeckInfo($request->input('deckId'))['hasPermission'] === false) {
-            return response()->json(['error' => true, 'message' => 'Ha ocurrido un error, eso es lo único que sabemos']);
-        }
+        $this->verifyIfUserBelongsToTheDeck($user, $deckId);
 
-        $userTwitterAccount = TwitterAccount::where('deck_id', $request->input('deckId'))
+        /* Deck verification starts */
+        //Check if the deck has apis attached
+        $this->verifyIfDeckHasApis($apis);
+
+        /*TwitterAccount verification starts, first retrieve it */
+        $userTwitterAccount = TwitterAccount::where('deck_id', $deckId)
             ->where('user_id', $user->id)
             ->first();
 
         // Verify if the user has a twitter account attach to the deck
-        if ($userTwitterAccount === null) {
-            return response()->json(['error' => true, 'message' => 'No tienes ninguna cuenta vinculada al deck']);
-        }
+        $this->verifyIfUserHasTwitterAccountsInTheDeck($userTwitterAccount);
 
-        //Check if the user is time restricted
+        //Verify if the user's twitter account has all apis
+        $this->verifyIfUserTwitterAccountStatusIsActive($userTwitterAccount);
+
+        /* Business logic verification starts */
+
         $deck = $selectedApi->deck;
-
         $lastRecord = Record::where('username', $user->username)
             ->where('deck_id', $deck->id)
             ->where('created_at', '>=', Carbon::now()->subHour())
             ->orderBy('created_at', 'asc')
             ->get();
 
+        //Check if user is time restricted in the current deck
+        $this->verifyIfUserIsTimeRestricted($lastRecord, $deck);
 
-        if ($lastRecord->count() >= $deck->rt_number) {
-            $nextHour = Carbon::parse($lastRecord[0]->created_at)->addHour();
-            $remainingMinutes = $nextHour->diffInMinutes(Carbon::now());
-
-            return response()->json([
-                'error' => true,
-                'message' => 'Has excedido tus RT/H. El próximo RT estará disponible en ' . $remainingMinutes . ' minutos']);
-
-        }
-
-
-        //Verify if the user's twitter account has all apis
-        if ($userTwitterAccount->status !== 'active') {
-            return response()->json(
-                [
-                    'error' => true,
-                    'message' => 'Parece que estas intentando dar RT desde una cuenta que no cumple los requisitos. Por favor, revisa tus Apis'
-                ]);
-        }
-
-        //Check if the deck has apis attached
-        if (count($apis) === 0) {
-            return response()->json(['error' => true, 'message' => 'El deck no tiene apis registradas para dar RT']);
-        }
-        //Ends verification
+        /* ---------- THE REQUEST VERIFICATION ENDS --------*/
 
         //Get all twitter accounts attached to that api
         $twitterAccountsApis = $selectedApi->twitterAccountApis;
@@ -290,15 +282,63 @@ class TwitterController extends Controller
         return response()->json(['successRT' => $successRt . '/' . $totalTwitterAccountsApis]);
     }
 
-    /**
-     * RTFrom Owner. Same darRT method but has not time restriction or api dependence.
-     *
-     * @param Request $request
-     * @return void
-     */
-    public function RTFromOwner(Request $request)
+    private function verifyIfUserBelongsToTheDeck(?\Illuminate\Contracts\Auth\Authenticatable $user, $deckId): void
     {
-        //todo: implement method
+
+        if (!($user->belongsToDeck($deckId))) {
+            response()->json([
+                'error' => true,
+                'message' => 'Estas tratando de dar RT a un deck a el que no perteneces'
+            ])->send();
+            die();
+        }
+    }
+
+    private function verifyIfDeckHasApis($apis): void
+    {
+        if (count($apis) === 0) {
+            response()->json(['error' => true, 'message' => 'El deck no tiene apis registradas para dar RT'])->send();
+            die();
+        }
+    }
+
+    private function verifyIfUserHasTwitterAccountsInTheDeck($userTwitterAccount): void
+    {
+        if ($userTwitterAccount === null) {
+            response()->json(
+                [
+                    'error' => true,
+                    'message' => 'No tienes ninguna cuenta vinculada al deck'
+                ]
+            )->send();
+            die();
+        }
+    }
+
+    private function verifyIfUserTwitterAccountStatusIsActive($userTwitterAccount): void
+    {
+        if ($userTwitterAccount->status !== 'active') {
+            response()->json(
+                [
+                    'error' => true,
+                    'message' => 'Parece que estas intentando dar RT desde una cuenta que no cumple los requisitos. Por favor, revisa tus Apis'
+                ])->send();
+            die();
+        }
+    }
+
+    private function verifyIfUserIsTimeRestricted($lastRecord, $deck)
+    {
+        if ($lastRecord->count() >= $deck->rt_number) {
+            $nextHour = Carbon::parse($lastRecord[0]->created_at)->addHour();
+            $remainingMinutes = $nextHour->diffInMinutes(Carbon::now());
+
+            response()->json([
+                'error' => true,
+                'message' => 'Has excedido tus RT/H. El próximo RT estará disponible en ' . $remainingMinutes . ' minutos'])->send();
+            die();
+
+        }
     }
 
     /**
@@ -482,6 +522,16 @@ class TwitterController extends Controller
         }
     }
 
+    /**
+     * RTFrom Owner. Same darRT method but has not time restriction or api dependence.
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function RTFromOwner(Request $request)
+    {
+        //todo: implement method
+    }
 
     public function unrt()
     {

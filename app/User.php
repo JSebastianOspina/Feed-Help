@@ -112,6 +112,13 @@ class User extends Authenticatable
         return $this->hasMany(TwitterAccount::class);
     }
 
+    public function belongsToDeck($deckId): bool
+    {
+        return $this->getDeckInfo($deckId)['hasPermission'] === true;
+
+
+    }
+
     public function getDeckInfo($deckId): array
     {
         $deckUser = DB::table('deck_user')
