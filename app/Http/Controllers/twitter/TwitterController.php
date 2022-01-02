@@ -237,14 +237,10 @@ class TwitterController extends Controller
         /* Business logic verification starts */
 
         $deck = $selectedApi->deck;
-        $lastRecord = Record::where('username', $user->username)
-            ->where('deck_id', $deck->id)
-            ->where('created_at', '>=', Carbon::now()->subHour())
-            ->orderBy('created_at', 'asc')
-            ->get();
+
 
         //Check if user is time restricted in the current deck
-        $this->verifyIfUserIsTimeRestricted($lastRecord, $deck);
+        $this->verifyIfUserIsTimeRestricted($user, $deck);
 
         /* ---------- THE REQUEST VERIFICATION ENDS --------*/
 
@@ -327,15 +323,20 @@ class TwitterController extends Controller
         }
     }
 
-    private function verifyIfUserIsTimeRestricted($lastRecord, $deck)
+    private function verifyIfUserIsTimeRestricted($user, $deck)
     {
-        if ($lastRecord->count() >= $deck->rt_number) {
-            $nextHour = Carbon::parse($lastRecord[0]->created_at)->addHour();
+        $lastRecord = Record::where('username', $user->username)
+            ->where('deck_id', $deck->id)
+            ->where('created_at', '>=', Carbon::now()->subMinutes($deck->rt_minutes))
+            ->orderBy('created_at', 'asc')
+            ->get();
+        if ($lastRecord->count() > 0) {
+            $nextHour = Carbon::parse($lastRecord[0]->created_at)->addMinutes($deck->rt_minutes);
             $remainingMinutes = $nextHour->diffInMinutes(Carbon::now());
 
             response()->json([
                 'error' => true,
-                'message' => 'Has excedido tus RT/H. El próximo RT estará disponible en ' . $remainingMinutes . ' minutos'])->send();
+                'message' => 'Has excedido el numero máximo de RT. El próximo RT estará disponible en ' . $remainingMinutes . ' minutos'])->send();
             die();
 
         }

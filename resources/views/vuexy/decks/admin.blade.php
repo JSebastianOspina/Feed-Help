@@ -278,7 +278,7 @@
                                 @csrf
                                 @method('PATCH')
                                 <div class="col-12 col-md-6">
-                                    <label class="form-label" for="rt_minutes">Cantidad RT/H:</label>
+                                    <label class="form-label" for="rt_minutes">Minutos para RT:</label>
                                     <input type="number" class="form-control" name="rt_minutes" id="rt_minutes"
                                            value="{{$deck->rt_minutes}}"
                                            min="60">

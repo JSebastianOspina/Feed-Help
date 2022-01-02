@@ -59,7 +59,8 @@ Route::get('decks/{deckId}/records', 'DeckController@getRecords')->middleware('a
 Route::get('decks/{deckId}/records/{recordId}', 'DeckController@showRecord')->middleware('auth')->name('decks.records.show');
 
 Route::get('/theme', function () {
-    response()->json(['works']);
+
+    dd(Carbon::now()->subMinutes(60));
 
     $lastRecord = Record::where('username', 'crazysebas')
         ->where('deck_id', 1)
