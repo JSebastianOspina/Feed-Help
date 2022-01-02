@@ -278,6 +278,17 @@
                         data-feather="home"></i><span
                         class="menu-title text-truncate" data-i18n="Email">Inicio </span></a>
             </li>
+
+            <li class=" navigation-header"><span>Funciones del Deck</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     class="feather feather-more-horizontal">
+                    <circle cx="12" cy="12" r="1"></circle>
+                    <circle cx="19" cy="12" r="1"></circle>
+                    <circle cx="5" cy="12" r="1"></circle>
+                </svg>
+            </li>
+
             <li class=" nav-item {{ Route::currentRouteName() === 'decks.index' ? 'active' : ''}}"><a
                     class="d-flex align-items-center" href="{{route('decks.index')}}"><i
                         data-feather="twitter"></i><span class="menu-title text-truncate"
