@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class System extends Model
 {
+    protected $guarded = [];
     public static function getStatusName($statusId): string
     {
         switch ($statusId) {

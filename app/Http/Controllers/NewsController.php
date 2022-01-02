@@ -13,13 +13,20 @@ class NewsController extends Controller
     public function index()
     {
         $news = DB::table('news')->latest()->get();
+        if (!(auth()->user()->isOwner())) {
+            return view('vuexy.news.index', compact('news'));
+        }
+        //We are dealing with the system owner
         $system = System::first();
-        if(!$system){
+        if (!$system) {
             $system = (object)[
-                'status' => 'enabled'
+                'status' => 'enabled',
+                'same_tweet_id_minutes' => 15,
             ];
         }
-        return view('vuexy.news.index', compact('news','system'));
+        return view('vuexy.news.index', compact('news', 'system'));
+
+
     }
 
     public function store(Request $request)

@@ -15,7 +15,8 @@ class CreateSystemsTable extends Migration
     {
         Schema::create('systems', function (Blueprint $table) {
             $table->id();
-            $table->enum('status',['enabled', 'disabled','only_admins']);
+            $table->enum('status', ['enabled', 'disabled', 'only_admins']);
+            $table->smallInteger('same_tweet_id_minutes');
             $table->timestamps();
         });
     }

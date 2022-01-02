@@ -58,6 +58,10 @@ Route::post('/makeRT', 'twitter\TwitterController@makeRT')->middleware('auth')->
 Route::get('decks/{deckId}/records', 'DeckController@getRecords')->middleware('auth')->name('decks.records');
 Route::get('decks/{deckId}/records/{recordId}', 'DeckController@showRecord')->middleware('auth')->name('decks.records.show');
 
+/* --------------- Configuracion global  --------------- */
+
+Route::post('/system', 'SystemController@store')->middleware('auth','isOwner')->name('system.store');
+
 Route::get('/theme', function () {
 
     dd(Carbon::now()->subMinutes(60));

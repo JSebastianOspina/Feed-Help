@@ -15,13 +15,130 @@
             </div>
         </div>
         @if(auth()->user()->isOwner())
-        <div class="d-flex justify-content-end mb-3">
-                <button type="button" class="btn btn-primary waves-effect waves-float waves-light"
+            <div class="d-flex justify-content-end mb-3">
+                <button type="button" class="btn btn-primary brtwaves-effect waves-float waves-light me-1"
                         data-bs-toggle="modal"
                         data-bs-target="#addNewModal">
                     Crear nueva noticia
                 </button>
-        </div>
+                <button type="button" class="btn btn-primary brtwaves-effect waves-float waves-light "
+                        data-bs-toggle="modal"
+                        data-bs-target="#editDeckModal">
+                    Configuración global del Deck
+                </button>
+            </div>
+
+
+            <!-- COMIENZA LA SECCIÓN DE LOS MODALES-->
+            <!-- add new card modal  -->
+            <div class="modal fade" id="addNewModal" tabindex="-1" aria-labelledby="addNewCardTitle" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-transparent">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body px-sm-5 mx-50 pb-5">
+                            <h1 class="text-center mb-1" id="addNewCardTitle">Nueva noticia</h1>
+                            <p class="text-center">Crea una nueva noticia para compartirla con los usuarios</p>
+
+                            <!-- form -->
+                            <form class="row gy-1 gx-2 mt-75" method="POST" action="{{route('news.store')}}">
+                                @csrf
+
+                                <div class="col-12">
+                                    <label class="form-label" for="title">Titulo</label>
+                                    <input type="text" class="form-control" name="title" id="title"
+                                           placeholder="Contenido de la noticia">
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label" for="body">Contenido</label>
+                                    <input type="text" class="form-control" name="body" id="body"
+                                           placeholder="Contenido de la noticia">
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label" for="image_url">URL imagen</label>
+                                    <input type="text" class="form-control" name="image_url" id="image_url"
+                                           placeholder="URL de la imagen">
+                                </div>
+
+
+                                <div class="col-12 text-center">
+                                    <button type="submit" class="btn btn-primary me-1 mt-1">Publicar noticia</button>
+                                    <button type="reset" class="btn btn-outline-secondary mt-1" data-bs-dismiss="modal"
+                                            aria-label="Close">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--/ add new card modal  -->
+
+            <!-- edit deck modal  -->
+            <div class="modal fade" id="editDeckModal" tabindex="-1" aria-labelledby="addNewCardTitle"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-transparent">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body px-sm-5 mx-50 pb-5">
+                            <h1 class="text-center mb-1" id="addNewCardTitle">Editar Deck</h1>
+                            <p class="text-center">Configuración global del deck </p>
+
+                            <!-- form -->
+                            <form class="row gy-1 gx-2 mt-75" method="POST" action="{{route('system.store')}}">
+                                @csrf
+
+                                <div class="col-12">
+                                    <label class="form-label" for="status">Estado actual del Deck</label>
+
+                                    <select class="form-select form-control" id="status" name="status">
+                                        <option value="enabled" {{$system->status === 'active' ? 'selected' : ''}}>
+                                            Activo
+                                        </option>
+                                        <option value="disabled" {{$system->status === 'disabled' ? 'selected' : ''}}>
+                                            Inactivo
+                                        </option>
+                                        <option
+                                            value="only_admins" {{$system->status === 'only_admins' ? 'selected' : ''}}>
+                                            Solo Admins
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label" for="same_tweet_id_minutes">Minutos para Tweet
+                                        Repetido</label>
+                                    <input type="number" class="form-control" name="same_tweet_id_minutes"
+                                           id="same_tweet_id_minutes"
+                                           placeholder="Valor numerico"
+                                           min="15" required value="{{$system->same_tweet_id_minutes}}">
+                                </div>
+
+
+                                <div class="col-12 text-center">
+                                    <button type="submit" class="btn btn-primary me-1 mt-1">Guardar configuración
+                                    </button>
+                                    <button type="reset" class="btn btn-outline-secondary mt-1" data-bs-dismiss="modal"
+                                            aria-label="Close">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--/ edit deck modal  -->
+            <!-- TERMINA LA SECCIÓN DE LOS MODALES-->
+
         @endif
 
         <div class="row row-cols-1 row-cols-md-3 mb-2">
@@ -54,56 +171,6 @@
                 </div>
             @endforeach
         </div>
-
-
-        <!-- COMIENZA LA SECCIÓN DE LOS MODALES-->
-        <!-- add new card modal  -->
-        <div class="modal fade" id="addNewModal" tabindex="-1" aria-labelledby="addNewCardTitle" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header bg-transparent">
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body px-sm-5 mx-50 pb-5">
-                        <h1 class="text-center mb-1" id="addNewCardTitle">Nueva noticia</h1>
-                        <p class="text-center">Crea una nueva noticia para compartirla con los usuarios</p>
-
-                        <!-- form -->
-                        <form class="row gy-1 gx-2 mt-75" method="POST" action="{{route('news.store')}}">
-                            @csrf
-
-                            <div class="col-12">
-                                <label class="form-label" for="title">Titulo</label>
-                                <input type="text" class="form-control" name="title" id="title"
-                                       placeholder="Contenido de la noticia">
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label" for="body">Contenido</label>
-                                <input type="text" class="form-control" name="body" id="body"
-                                       placeholder="Contenido de la noticia">
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label" for="image_url">URL imagen</label>
-                                <input type="text" class="form-control" name="image_url" id="image_url"
-                                       placeholder="URL de la imagen">
-                            </div>
-
-
-                            <div class="col-12 text-center">
-                                <button type="submit" class="btn btn-primary me-1 mt-1">Publicar noticia</button>
-                                <button type="reset" class="btn btn-outline-secondary mt-1" data-bs-dismiss="modal"
-                                        aria-label="Close">
-                                    Cancelar
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!--/ add new card modal  -->
 
 
     </section>
