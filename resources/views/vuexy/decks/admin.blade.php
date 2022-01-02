@@ -98,7 +98,7 @@
                         <div class="d-flex justify-content-end" style="margin-bottom: 15px">
 
 
-                            <a class="btn btn-primary btn-sm me-1" href="{{route('decks.show',['deck'=>1])}}">
+                            <a class="btn btn-primary btn-sm me-1" href="{{route('decks.show',['deck'=>$deck->id])}}">
                                 <i data-feather="user"></i>
                                 <span>Gestionar usuarios</span>
                             </a>

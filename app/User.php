@@ -5,9 +5,7 @@ namespace App;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
-use Spatie\Permission\Traits\HasRoles;
 
-//Añadimos libreria
 
 /**
  * App\User
@@ -52,7 +50,6 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     use Notifiable;
-    use HasRoles;
 
 
     /**

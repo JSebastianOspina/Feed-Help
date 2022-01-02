@@ -188,6 +188,7 @@ class TwitterController extends Controller
 
     public function makeRT(Request $request)
     {
+        session(['isTweeting' => false]);
         if (session('isTweeting') === true) {
             return response()->json([
                 'error' => true,
@@ -195,6 +196,11 @@ class TwitterController extends Controller
             ]);
         }
         session(['isTweeting' => true]);
+
+        $tweetId = $this->getTweetId($request);
+
+        $this->verifyIfTweetHasAlreadyBeenTweeted($tweetId);
+
         //Define useful variables
         $deckId = $request->input('deckId');
         $user = auth()->user();
@@ -216,6 +222,7 @@ class TwitterController extends Controller
 
         //Pick a random api
         $selectedApi = $apis->random();
+
 
         /* ---------- THE REQUEST VERIFICATION STARTS --------*/
 
@@ -258,7 +265,6 @@ class TwitterController extends Controller
         $notRtBy = '';
         $extraInfo = [];
         //iterate over all accounts and make the rt from there
-        $tweetId = $this->getTweetId($request);
         foreach ($twitterAccountsApis as $twitterAccountApi) {
             //Create api connection and make RT post request
             $apiConnection = new TwitterOAuth($selectedApi->key, $selectedApi->secret, $twitterAccountApi->key, $twitterAccountApi->secret);
@@ -281,6 +287,48 @@ class TwitterController extends Controller
         $this->createNewTweetRecord($request, $tweetId, $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
         session(['isTweeting' => false]);
         return response()->json(['successRT' => $successRt . '/' . $totalTwitterAccountsApis]);
+    }
+
+    /**
+     * @param Request $request
+     * @return array
+     */
+    private function getTweetId(Request $request): string
+    {
+        $tweetUrl = explode('/', $request->input('tweetURL'));
+        return explode('?', end($tweetUrl))[0];
+    }
+
+    private function verifyIfTweetHasAlreadyBeenTweeted($tweetId): void
+    {
+        $system = DB::table('systems')
+            ->select(['same_tweet_id_minutes'])
+            ->first();
+        if ($system === null) {
+            $same_tweet_id_minutes = $system->same_tweet_id_minutes;
+
+        } else {
+            $same_tweet_id_minutes = 15;
+        }
+
+        $record = DB::table('records')->where('tweet_id', $tweetId)
+            ->where('created_at', '>=', Carbon::now()->subMinutes($same_tweet_id_minutes))
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        if ($record->count() > 0) {
+            session(['isTweeting' => false]);
+
+            $nextHour = Carbon::parse($record[0]->created_at)->addMinutes($same_tweet_id_minutes);
+            $remainingMinutes = $nextHour->diffInMinutes(Carbon::now());
+
+            response()->json([
+                'error' => true,
+                'message' => 'Ya se ha hecho RT a este tweet. Estará disponible nuevamente en  ' . $remainingMinutes . ' minutos'])->send();
+            die();
+
+        }
+
     }
 
     private function verifyIfUserBelongsToTheDeck(?\Illuminate\Contracts\Auth\Authenticatable $user, $deckId): void
@@ -360,16 +408,6 @@ class TwitterController extends Controller
         }
     }
 
-    /**
-     * @param Request $request
-     * @return array
-     */
-    private function getTweetId(Request $request): string
-    {
-        $tweetUrl = explode('/', $request->input('tweetURL'));
-        return end($tweetUrl);
-    }
-
     public function isError($responseObject): bool
     {
         if (isset($responseObject->errors[0]->message)) {
@@ -423,6 +461,7 @@ class TwitterController extends Controller
      */
     private function createNewTweetRecord(Request $request, $tweetId, int $successRt, $totalTwitterAccountsApis, string $notRtBy, array $extraInfo): void
     {
+
         Record::create([
             'username' => Auth::user()->username,
             'deck_id' => $request->input('deckId'),
