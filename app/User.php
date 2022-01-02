@@ -79,9 +79,15 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function admittedOnMaintenance(): bool
+    public function admittedOnMaintenance($deckStatus): bool
     {
-        return ($this->isAdmin() || $this->isOwner());
+        if ($deckStatus === 'enabled') {
+            return true;
+        }
+        if ($deckStatus === 'only_admins') {
+            return ($this->isAdmin() || $this->isOwner());
+        }
+        return $this->isOwner();
     }
 
     public function isAdmin(): bool

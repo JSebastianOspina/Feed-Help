@@ -14,12 +14,6 @@
                     <i data-feather="settings"></i>
                     <span>Volver al deck</span>
                 </a>
-                @if(auth()->user()->isOwner())
-                    <a class="btn btn-primary btn-sm" href="{{route('decks.edit',['deck'=>$deckId])}}">
-                        <i data-feather="tool"></i>
-                        <span>Gestionar deck</span>
-                    </a>
-                @endif
 
             </div>
             @foreach($rtApis as $rtApi)

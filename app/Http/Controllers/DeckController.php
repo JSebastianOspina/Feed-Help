@@ -15,7 +15,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
-use function unserialize;
 
 class DeckController extends Controller
 {
@@ -35,8 +34,38 @@ class DeckController extends Controller
 
     public function edit($deckId)
     {
+        if (!($this->hasAdminPermissions($deckId))) {
+            abort(403);
+        }
+        $canEditDeck = false;
+
+        //Check if it's owner to allow the user edit the deck
+        if ($this->hasOwnerPermissions($deckId)) {
+            $canEditDeck = true;
+        }
         $deck = Deck::where('id', $deckId)->with(['twitterAccounts', 'apis'])->first();
-        return view('vuexy.decks.admin', compact('deck'));
+        return view('vuexy.decks.admin', compact('deck', 'canEditDeck'));
+    }
+
+    private function hasAdminPermissions($deck_id): bool
+    {
+        $user = auth()->user();
+        $deckRole = $user->getDeckInfo($deck_id)['role'];
+
+        //If doesnt have the required role, return 403 error code
+        if (!($deckRole === "owner" || $deckRole === "admin")) {
+            return false;
+        }
+        return true;
+    }
+
+    private function hasOwnerPermissions($deck_id): bool
+    {
+        $user = auth()->user();
+        $deckRole = $user->getDeckInfo($deck_id)['role'];
+
+        //If doesnt have the required role, return 403 error code
+        return $deckRole === "owner";
     }
 
     public function store(Request $request)
@@ -69,17 +98,16 @@ class DeckController extends Controller
 
         //Assign permissions
         $deckAdmin->decks()->attach($deck->id, ['role' => 'owner']);
-        auth()->user()->decks()->attach($deck->id, ['role' => 'owner']);
 
         return back()->withErrors('Deck creado exitosamente');
-
-        return back()->withErrors('¡Cuidado! ese nombre de usuario no existe.');
     }
 
     public function storeApi(Request $request, $deckId)
     {
         //Check if the user can not perform the action
-        $this->hasOwnerPermissions($deckId);
+        if (!$this->hasAdminPermissions($deckId)) {
+            abort(403);
+        }
         //Validate the request
         $validatedData = $request->validate([
             'name' => 'required|string|min:1',
@@ -97,21 +125,12 @@ class DeckController extends Controller
         return redirect()->route('decks.edit', ['deck' => $deckId]);
     }
 
-    private function hasOwnerPermissions($deck_id): void
-    {
-        $user = auth()->user();
-        $deckRole = $user->getDeckInfo($deck_id)['role'];
-
-        //If doesnt have the required role, return 403 error code
-        if (!($deckRole === "owner")) {
-            abort('403');
-        }
-    }
-
     public function updateApi(Request $request, $deckId, $apiId)
     {
         //Check if the user can not perform the action
-        $this->hasOwnerPermissions($deckId);
+        if (!$this->hasAdminPermissions($deckId)) {
+            abort(403);
+        }
         //Validate the request
         $validatedData = $request->validate([
             'name' => 'required|string|min:1',
@@ -132,7 +151,9 @@ class DeckController extends Controller
     public function deleteApi($deckId, $apiId)
     {
         //Check if the user can not perform the action
-        $this->hasOwnerPermissions($deckId);
+        if (!$this->hasAdminPermissions($deckId)) {
+            abort(403);
+        }
         //Validate the request
         $api = Api::find($apiId);
         if ($api === null) {
@@ -176,15 +197,6 @@ class DeckController extends Controller
         $histo = Rt::where('deck', $id)->orderBy('created_at', 'desc')->limit(10)->get();
 
         return view('panel.deck.historial', compact('histo', 'id'));
-    }
-
-    public function inspector($id, $unico)
-    {
-        $histo = Rt::find($unico);
-        $o = [];
-        $h = "1277402467278430208";
-        $o = unserialize($histo->quienes);
-        return view('panel.deck.inspector', compact('o', 'id', 'h'));
     }
 
     public function consentido($username)
@@ -245,14 +257,17 @@ class DeckController extends Controller
             ->leftJoin('twitter_accounts AS t', 'deck_user.twitter_account_id', '=', 't.id')
             ->get()
             ->sortBy('twitter_accounts.followers');
+
         //If the user is owner or admin , lets
         $userRole = $deckInfo['role'];
         if ($userRole === 'owner' || $userRole === 'admin') {
-            $users = DB::table('users')->select('name', 'id')->get();
-            return view('vuexy.decks.show', compact('deck', 'deckUsers', 'users'));
+            $hasPermission = true;
+            $users = DB::table('users')->select('username', 'id')->get();
+            return view('vuexy.decks.show', compact('deck', 'deckUsers', 'users', 'hasPermission'));
 
         }
-        return view('vuexy.decks.show', compact('deck', 'deckUsers'));
+        $hasPermission = false;
+        return view('vuexy.decks.show', compact('deck', 'deckUsers', 'hasPermission'));
 
     }
 
@@ -260,7 +275,9 @@ class DeckController extends Controller
     {
         $requestedData = $request->all();
 
-        $this->hasOwnerPermissions($deckId);
+        if (!$this->hasOwnerPermissions($deckId)) {
+            abort(403);
+        }
         //Validate the request
         $validatedData = $request->validate([
             'whatsapp_group_url' => 'nullable|string',
@@ -285,7 +302,9 @@ class DeckController extends Controller
     public function newUser(Request $request, $deckId)
     {
         //Check if the user can perform this action
-        $this->hasAdminPermissions($deckId);
+        if (!$this->hasAdminPermissions($deckId)) {
+            abort(403);
+        }
         //Check if is asking for a valid role
         Validator::make($request->all(), [
             'role' => [
@@ -306,20 +325,11 @@ class DeckController extends Controller
         return back();
     }
 
-    private function hasAdminPermissions($deck_id): void
-    {
-        $user = auth()->user();
-        $deckRole = $user->getDeckInfo($deck_id)['role'];
-
-        //If doesnt have the required role, return 403 error code
-        if (!($deckRole === "owner" || $deckRole === "admin")) {
-            abort('403');
-        }
-    }
-
     public function deleteUser($deckId, $userId)
     {
-        $this->hasAdminPermissions($deckId);
+        if (!$this->hasAdminPermissions($deckId)) {
+            abort(403);
+        }
         $deckUser = DB::table('deck_user')
             ->where('user_id', $userId)
             ->where('deck_id', $deckId)
@@ -366,12 +376,7 @@ class DeckController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param int $id
-     * @return ResphasAdminPermissionsonse
-     */
+
     public function destroy($id)
     {
         if (
@@ -434,7 +439,7 @@ class DeckController extends Controller
     public function verifyUserApis($deckId)
     {
         if (!(auth()->user()->getDeckInfo($deckId)['hasPermission'])) {
-            abort(403);
+            abort(403, 'No Perteneces al deck en cuestion');
         }
 
         $apis = DB::table('apis')
@@ -486,11 +491,4 @@ class DeckController extends Controller
 
     }
 
-    public function showRecord($deckId, $recordId)
-    {
-        $records = Record::where('deck_id', $deckId)->latest()->first();
-        $details = unserialize($records->extra_info);
-        return view('vuexy.decks.records.show', compact('details', 'deckId'));
-
-    }
 }

@@ -3,8 +3,8 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class Mantenimiento
 {
@@ -18,20 +18,17 @@ class Mantenimiento
     public function handle($request, Closure $next)
     {
 
-        $deckStatus = DB::table('systems')->first();
-        if (!$deckStatus) { //haven't run migrations, let them pass.
+        $system = DB::table('systems')->first();
+        if (!$system) { //haven't run migrations, let them pass.
             return $next($request);
         }
-        //It's not enabled
-        if ($deckStatus->status !== 'enabled') {
-            // lets check the user role
-            if (Auth::user()->admittedOnMaintenance()) {
-                return $next($request);
-            }
-            //not allowed, redirect to error route.
-            return redirect('mantenimiento-view');
+        // lets check the user is Allowed
+        if (Auth::user()->admittedOnMaintenance($system->status)) {
+            return $next($request);
         }
-        //If enabled, let them pass
-        return $next($request);
+        //not allowed, redirect to error route.
+        return redirect('mantenimiento-view');
     }
+
+
 }
