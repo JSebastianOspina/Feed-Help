@@ -43,7 +43,7 @@ use Illuminate\Database\Eloquent\Model;
 class Deck extends Model
 {
     protected $table = 'decks';
-    protected $fillable = ['icon', 'name', 'owner_name', 'rt_number', 'delete_minutes', 'followers', 'enabled', 'isPublic', 'telegram_username', 'whatsapp_group_url', 'min_followers'];
+    protected $guarded = [];
 
     public function users()
     {

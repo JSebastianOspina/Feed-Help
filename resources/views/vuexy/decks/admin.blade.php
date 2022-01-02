@@ -60,7 +60,7 @@
 
                                         <li class="mb-75">
                                             <span class="fw-bolder me-25">RT/H:</span>
-                                            <span>{{$deck->rt_number}}</span>
+                                            <span>{{$deck->rt_minutes}}</span>
                                         </li>
                                         <li class="mb-75">
                                             <span class="fw-bolder me-25">Minutos para borrado:</span>
@@ -278,10 +278,10 @@
                                 @csrf
                                 @method('PATCH')
                                 <div class="col-12 col-md-6">
-                                    <label class="form-label" for="rt_number">Cantidad RT/H:</label>
-                                    <input type="number" class="form-control" name="rt_number" id="rt_number"
-                                           value="{{$deck->rt_number}}"
-                                           step="1" min="1" max="2">
+                                    <label class="form-label" for="rt_minutes">Cantidad RT/H:</label>
+                                    <input type="number" class="form-control" name="rt_minutes" id="rt_minutes"
+                                           value="{{$deck->rt_minutes}}"
+                                           min="60">
                                 </div>
                                 <div class="col-12 col-md-6">
                                     <label class="form-label" for="delete_minutes">Minutos para borrado</label>

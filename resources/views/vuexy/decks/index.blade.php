@@ -33,7 +33,7 @@
                                 <th>Nombre</th>
                                 <th>Estado</th>
                                 <th>Seguidores</th>
-                                <th>RT/H</th>
+                                <th>Minutos para RT</th>
                                 <th>Minutos para borrado</th>
                                 <th>Administrador</th>
 
@@ -55,7 +55,7 @@
                                         @endif
                                     </td>
                                     <td>{{$deck->followers}}</td>
-                                    <td>{{$deck->rt_number}}</td>
+                                    <td>{{$deck->rt_minutes}}</td>
                                     <td>{{$deck->delete_minutes}}</td>
                                     <td>{{$deck->owner_name}}</td>
 
@@ -104,9 +104,9 @@
                             </div>
 
                             <div class="col-12">
-                                <label class="form-label" for="rt_number">Cantidad RT/H</label>
-                                <input type="number" class="form-control" name="rt_number" id="rt_number" value="1"
-                                       step="1" min="1" max="4">
+                                <label class="form-label" for="rt_minutes">Minutos para RT</label>
+                                <input type="number" class="form-control" name="rt_minutes" id="rt_minutes" value="60"
+                                        min="60">
                             </div>
 
                             <div class="col-12">

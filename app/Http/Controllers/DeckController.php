@@ -48,29 +48,29 @@ class DeckController extends Controller
             'icon' => 'required',
             'name' => 'required|unique:decks',
             'owner_username' => 'required|string',
-            'rt_number' => 'required|numeric',
+            'rt_minutes' => 'required|numeric',
             'delete_minutes' => 'required|numeric',
         ]);
 
         $deckAdmin = User::where('username', $request->input('owner_username'))->first();
         if ($deckAdmin === null) {
             return back()->withErrors('El nombre de usuario proporcionado no existe');
-        } else {
-            $deck = Deck::create([
-                'name' => $request->input('name'),
-                'icon' => $request->input('icon'),
-                'owner_name' => $deckAdmin->name,
-                'rt_number' => $request->input('rt_number'),
-                'delete_minutes' => $request->input('delete_minutes'),
-                'followers' => 0,
-                'enabled' => 1
-            ]);
-
-            //Assign permissions
-            $deckAdmin->decks()->attach($deck->id, ['role' => 'owner']);
-
-            return back()->withErrors('Deck creado exitosamente');
         }
+
+        $deck = Deck::create([
+            'name' => $request->input('name'),
+            'icon' => $request->input('icon'),
+            'owner_name' => $deckAdmin->name,
+            'rt_minutes' => $request->input('rt_minutes'),
+            'delete_minutes' => $request->input('delete_minutes'),
+            'followers' => 0,
+            'enabled' => 1
+        ]);
+
+        //Assign permissions
+        $deckAdmin->decks()->attach($deck->id, ['role' => 'owner']);
+
+        return back()->withErrors('Deck creado exitosamente');
 
         return back()->withErrors('¡Cuidado! ese nombre de usuario no existe.');
     }
@@ -264,7 +264,7 @@ class DeckController extends Controller
         $validatedData = $request->validate([
             'whatsapp_group_url' => 'nullable|string',
             'telegram_username' => 'nullable|string',
-            'rt_number' => 'required|numeric|min:1|max:2',
+            'rt_minutes' => 'required|numeric|min:60',
             'delete_minutes' => 'required|numeric|min:10',
             'min_followers' => 'required|numeric|min:0',
             'enabled' => 'required|boolean',

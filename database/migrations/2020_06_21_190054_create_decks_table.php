@@ -18,7 +18,7 @@ class CreateDecksTable extends Migration
             $table->string('name')->unique();
             $table->string('icon')->nullable();
             $table->string('owner_name');
-            $table->tinyInteger('rt_number');
+            $table->tinyInteger('rt_minutes');
             $table->smallInteger('delete_minutes');
             $table->integer('followers')->default(0);
             $table->string('whatsapp_group_url')->nullable();
