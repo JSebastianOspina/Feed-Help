@@ -106,27 +106,12 @@ Route::post('/RT', 'twitter\TwitterController@darRT')->name('rt')->middleware('a
 
 Route::post('/master', 'twitter\TwitterController@master')->name('master')->middleware('auth');
 
-Route::get('/testrt', 'twitter\TwitterController@testrt')->name('testrt')->middleware('auth');
-
-
-Route::post('/generar', 'twitter\TwitterController@generar')->name('generar')->middleware('auth');
-Route::post('/generar1', 'twitter\TwitterController@generar1')->name('generar1')->middleware('auth');
-Route::post('/generar3', 'twitter\TwitterController@generar3')->name('generar3')->middleware('auth');
-
-Route::get('/reautorizar', 'twitter\TwitterController@reautorizar')->name('reautorizar')->middleware('auth');
-
 
 Route::get('/config-cache', 'DeckController@cache');
 
 // Activar / Desactivar Deck
 Route::post('/systemStatus', 'DeckController@updateOrCreateSystemStatus')->middleware('auth', 'isOwner')->name('updateOrCreateSystemStatus');
 
-//Actualizar followers de los decks
-Route::get('/actualizarDecks', 'DeckController@getDecksFollowers');
-
-
-Route::get('/agregar', 'PermisosController@crear')->middleware('auth');
 
 Auth::routes();
 
-Route::get('/hora', 'twitter\TwitterController@hora');

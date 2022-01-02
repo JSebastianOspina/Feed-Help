@@ -536,67 +536,44 @@ class TwitterController extends Controller
 
     public function unrt()
     {
-        $callback = "https://www.feed-help.de/callback";
-        define('OAUTH_CALLBACK', $callback);
 
-        $tweet = Rt::where('pendiente', 'Si')->get();
+        $records = Record::with('deck')->where('pending', 1)->get();
+        if ($records->count() === 0) {
+            return 'No hay tweets que borrar';
+        }
+        foreach ($records as $record) {
 
-        foreach ($tweet as $posible) {
-
-            $diferencia = $posible->updated_at->diffInMinutes(Carbon::now());
-            if ($diferencia > $posible->minutos) { //HA pasado mas de diez minutos
-
-                $deck_name = $posible->deck;
-
-                $aux = Deck::where('nombre', str_replace('_', ' ', $deck_name))->first();
-
-                if ($aux == null) {
+            $passMinutes = $record->updated_at->diffInMinutes(Carbon::now());
+            if ($passMinutes <= $record->deck->delete_minutes) {
+                echo nl2br("Aun no han pasado los minutos de borrado \n");
+            } else { //The wait delete minutes has pass
+                $deck = $record->deck;
+                $deleteApi = Api::where('deck_id', $deck->id)
+                    ->where('type', 'delete')
+                    ->first();
+                if ($deleteApi === null) {
+                    echo nl2br("El deck " . $deck->name . "No tiene api de borrado \n");
                     continue;
                 }
 
-                $consumer_key = $aux->borrarkey;
-                $consumer_secret = $aux->borrarsecret;
-
-                $borrame = Decks_user::where('nombredeck', $deck_name)->get();
-
                 //Tomamos los users del deck
-                $no = "";
-                foreach ($borrame as $guardar) {
-                    //if(!($guardar->nombredeck == "MM_Deck")){
+                foreach ($deleteApi->twitterAccountApis as $twitterAccountApi) {
+                    $connection = new TwitterOAuth($deleteApi->key, $deleteApi->secret, $twitterAccountApi->key, $twitterAccountApi->secret);
+                    $request = $connection->post("statuses/unretweet", ["id" => $record->tweet_id]);
 
-
-                    $access_token = [];
-                    $access_token['oauth_token'] = $guardar->borrarkey;
-                    $access_token['oauth_token_secret'] = $guardar->borrarsecret;
-                    $connection = new TwitterOAuth($consumer_key, $consumer_secret, $access_token['oauth_token'], $access_token['oauth_token_secret']);
-
-                    $statues = $connection->post("statuses/unretweet", ["id" => $posible->rtid]);
-                    var_dump($statues);
-
-                    echo "borrado" . $guardar->username . "\n";
-
-
-                    //DETECCION DE INFRACTORES
-                    if (isset($statues->errors[0])) {
+                    if (isset($request->errors[0])) {
+                        self::checkAndSaveIfInvalidOrExpiredToken($request->errors[0]->code, $twitterAccountApi);
+                        echo nl2br("Se presentó el siguiente error con el usuario :" . $twitterAccountApi->twitter_account_id . "\n");
+                        var_dump($request);
                     } else {
-
-                        if ($statues->retweeted == false) {
-                            $no = $no . $guardar->twitter . ",";
-                        }
+                        echo nl2br("borrado, cuenta de twitter con id: " . $twitterAccountApi->twitter_account_id . "\n");
                     }
-
-
-                    //FINALIZA LA DETECCION DE INFRACTORES
                 }
 
-                $posible->pendiente = "No";
-                $posible->infractores = $no;
-
-                $posible->save();
+                $record->pending = 0;
+                $record->save();
             }
         }
-
-        // }
 
         echo "listo";
     }
