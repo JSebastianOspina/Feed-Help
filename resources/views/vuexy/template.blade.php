@@ -39,7 +39,7 @@
           href="{{asset('2.0/app-assets/css/plugins/extensions/ext-component-toastr.css')}}">
 
 @yield('head')
-    <!-- END: Page CSS-->
+<!-- END: Page CSS-->
 
     <!-- BEGIN: Custom CSS-->
     <link rel="stylesheet" type="text/css" href="{{asset('2.0/assets/css/style.css')}}">
@@ -102,9 +102,12 @@
                             class="avatar-status-online"></span></span>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user">
-                    <a class="dropdown-item" href="auth-login-cover.html">
-                        <i class="me-50" data-feather="power"></i> Cerrar sesión
-                    </a>
+                    <form action="{{route('logout')}}" method="POST">
+                        @csrf
+                        <button class="dropdown-item" href="auth-login-cover.html">
+                            <i class="me-50" data-feather="power"></i> Cerrar sesión
+                        </button>
+                    </form>
                 </div>
             </li>
         </ul>
