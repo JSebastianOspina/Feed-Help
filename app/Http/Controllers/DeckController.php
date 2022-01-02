@@ -26,14 +26,11 @@ class DeckController extends Controller
 
         if ($user->isOwner()) {
             $decks = Deck::orderBy('followers', 'desc')->get();
-            $users = DB::table('users')->select(['name', 'id'])->get();
-            return view('vuexy.decks.index', compact('decks', 'users'));
-
+        } else {
+            $decks = $user->decks;
         }
 
-        $decks = $user->decks;
         return view('vuexy.decks.index', compact('decks'));
-
     }
 
     public function edit($deckId)
@@ -265,7 +262,7 @@ class DeckController extends Controller
         $this->hasOwnerPermissions($deckId);
         //Validate the request
         $validatedData = $request->validate([
-            'whatsapp_group_url' => 'required|string',
+            'whatsapp_group_url' => 'nullable|string',
             'telegram_username' => 'nullable|string',
             'rt_number' => 'required|numeric|min:1|max:2',
             'delete_minutes' => 'required|numeric|min:10',
