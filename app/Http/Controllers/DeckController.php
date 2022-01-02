@@ -53,7 +53,7 @@ class DeckController extends Controller
         $deckRole = $user->getDeckInfo($deck_id)['role'];
 
         //If doesnt have the required role, return 403 error code
-        if (!($deckRole === "owner" || $deckRole === "admin")) {
+        if (!($deckRole === "owner" || $deckRole === "admin" || !$user->isOwner() )) {
             return false;
         }
         return true;
@@ -65,7 +65,7 @@ class DeckController extends Controller
         $deckRole = $user->getDeckInfo($deck_id)['role'];
 
         //If doesnt have the required role, return 403 error code
-        return $deckRole === "owner";
+        return $deckRole === "owner" || $user->isOwner();
     }
 
     public function store(Request $request)

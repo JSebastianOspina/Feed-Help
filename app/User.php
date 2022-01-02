@@ -130,6 +130,14 @@ class User extends Authenticatable
             ->first();
 
         if ($deckUser === null) {
+            //Check if is the owner
+            if($this->isOwner()) {
+                return [
+                    'role' => 'owner',
+                    'hasPermission' => true,
+                ];
+            }
+            //If not, the user doesn't have any permission
             return [
                 'role' => null,
                 'hasPermission' => false,
