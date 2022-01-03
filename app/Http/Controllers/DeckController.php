@@ -450,7 +450,7 @@ class DeckController extends Controller
 
     public function getRecords($deckId)
     {
-        $records = Record::where('deck_id', $deckId)->get();
+        $records = Record::where('deck_id', $deckId)->limit(10)->latest()->get();
         return view('vuexy.decks.records.index', compact('records', 'deckId'));
 
     }
