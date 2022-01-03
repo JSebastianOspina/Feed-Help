@@ -53,7 +53,7 @@
                                             <span class="badge rounded-pill badge-light-danger me-1">Inactivo</span>
                                         @endif
                                     </td>
-                                    <td>{{$deck->followers}}</td>
+                                    <td>{{number_format($deck->followers,0,',','.')}}</td>
                                     <td>{{$deck->rt_minutes}}</td>
                                     <td>{{$deck->delete_minutes}}</td>
                                     <td>{{$deck->owner_name}}</td>

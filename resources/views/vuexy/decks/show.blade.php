@@ -58,7 +58,7 @@
                 </div>
                 <div class="card-body">
                     <p class="card-text">
-                        Número total de seguidores: {{$deck->followers}}
+                        Número total de seguidores: {{number_format($deck->followers,0,',','.')}}
                     </p>
 
                 </div>
@@ -113,7 +113,7 @@
                                     </div>
                                 </td>
 
-                                <td>{{ $user->twitterFollowers ?? 0}}</td>
+                                <td>{{ $user->twitterFollowers === null || $user->twitterFollowers === 0? 0: number_format($user->twitterFollowers,0,',','.')}}</td>
                                 @if($hasPermission === true)
 
                                     <td>
