@@ -105,6 +105,9 @@ class TwitterController extends Controller
         // Check if the user has already authorize all apis in order to active it account.
         $this->checkIfTwitterAccountHasAllApis($twitterAccount, $api->deck->id);
 
+        //Update deck followers
+        $api->deck->followers+=$extraInfo['followers_count'];
+        $api->deck->save();
         //Redirect to view
         return redirect()->route('decks.apis.verify', ['deckId' => $api->deck->id]);
     }
