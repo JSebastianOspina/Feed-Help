@@ -37,6 +37,7 @@
                                 <th>Minutos para borrado</th>
                                 <th>Administrador</th>
 
+
                             </tr>
                             </thead>
                             <tbody>

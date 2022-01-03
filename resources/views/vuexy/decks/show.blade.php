@@ -17,6 +17,13 @@
                     <i data-feather="settings"></i>
                     <span>Gestionar apis</span>
                 </a>
+
+                <a class="btn btn-primary btn-sm me-1" href="{{$deck->whatsapp_group_url}}"
+                   target="_blank">
+                    <i data-feather="send"></i>
+                    <span>Grupo de Whatsapp</span>
+                </a>
+
                 <a class="btn btn-primary btn-sm me-1" href="{{route('decks.records',['deckId'=>$deck->id])}}">
                     <i data-feather="book-open"></i>
                     <span>Historial del Deck</span>

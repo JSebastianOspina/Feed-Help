@@ -285,13 +285,14 @@
                                         <label class="form-label" for="rt_minutes">Minutos para RT:</label>
                                         <input type="number" class="form-control" name="rt_minutes" id="rt_minutes"
                                                value="{{$deck->rt_minutes}}"
-                                               min="60">
+                                               min="60" required
+                                        >
                                     </div>
                                     <div class="col-12 col-md-6">
                                         <label class="form-label" for="delete_minutes">Minutos para borrado</label>
                                         <input type="number" class="form-control" name="delete_minutes"
                                                id="delete_minutes"
-                                               value="{{$deck->delete_minutes}}"
+                                               value="{{$deck->delete_minutes}}" required
                                                step="1" min="10">
                                     </div>
                                     <div class="col-12 col-md-6">
@@ -385,7 +386,7 @@
                                         <input id="name" name="name"
                                                class="form-control" type="text"
                                                placeholder="Nombre para identificar la API"
-                                               aria-describedby="modalAddCard2"
+                                               required
                                         />
                                     </div>
                                 </div>
@@ -395,7 +396,7 @@
                                         <input id="key" name="key"
                                                class="form-control" type="text"
                                                placeholder="API key de app Twitter"
-
+                                               required
                                         />
                                     </div>
                                 </div>
@@ -405,7 +406,7 @@
                                         <input id="secret" name="secret"
                                                class="form-control" type="text"
                                                placeholder="API secret de app Twitter"
-
+                                               required
                                         />
                                     </div>
                                 </div>

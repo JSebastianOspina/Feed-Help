@@ -347,6 +347,18 @@
         }
     })
 </script>
+@if ($errors->any())
+
+    @foreach ($errors->all() as $error)
+        <script>
+            toastr['error']('{{$error}}', 'Algo salió mal', {
+                closeButton: true,
+                tapToDismiss: false,
+            });
+        </script>
+    @endforeach
+@endif
+
 @if(\Illuminate\Support\Facades\Session::has('success'))
     <script>
         toastr['success']('{!! session()->get('success') !!}', '¡Exito!', {
