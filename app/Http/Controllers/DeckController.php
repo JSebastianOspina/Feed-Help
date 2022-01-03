@@ -232,7 +232,7 @@ class DeckController extends Controller
             ->join('users AS u', 'deck_user.user_id', '=', 'u.id')
             ->leftJoin('twitter_accounts AS t', 'deck_user.twitter_account_id', '=', 't.id')
             ->get()
-            ->sortBy(['twitter_accounts.followers','desc']);
+            ->sortBy(['twitterFollowers','desc']);
 
         //If the user is owner or admin , lets
         $userRole = $deckInfo['role'];
