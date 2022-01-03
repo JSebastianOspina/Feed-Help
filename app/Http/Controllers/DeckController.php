@@ -320,24 +320,25 @@ class DeckController extends Controller
         if (!$this->hasAdminPermissions($deckId)) {
             abort(403);
         }
-        $deckUser = DB::table('deck_user')
-            ->where('user_id', $userId)
+        $deckUser = DeckUser::where('user_id', $userId)
             ->where('deck_id', $deckId)
             ->first();
         if (!$deckUser) {
-            return back()->withError('El usuario que intentas eliminar no existe');
-
+            return back()->withError('El usuario que intentas eliminar no pertenece al Deck');
         }
         //delete twitter account
         $twitterAccount = TwitterAccount::find($deckUser->twitter_account_id);
         if ($twitterAccount) {
+            //Remove twitter account followers from deck
+            $deck = $twitterAccount->deck;
+            $deck->followers -= $twitterAccount->followers;
+            $deck->save();
+            //Delete the twitter account
             $twitterAccount->delete();
+        } else {
+            //delete the deck_user relationship (No twitter account has been attach yet)
+            $deckUser->delete();
         }
-        //delete deck relationship
-        DB::table('deck_user')
-            ->where('user_id', $userId)
-            ->where('deck_id', $deckId)
-            ->delete();
 
         return back()->withSuccess('Usuario eliminado exitosamente');
     }
