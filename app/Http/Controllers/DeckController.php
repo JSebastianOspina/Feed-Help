@@ -394,23 +394,34 @@ class DeckController extends Controller
             return redirect()->route('decks.index')
                 ->withError('Parece que te perdiste, no perteneces al Deck al que querias vincular APIS ');
         }
-        return auth()->user()->id;
+
         $apis = DB::table('apis')
             ->select([
-                'apis.id',
-                'apis.name',
-                'apis.type',
-                'ta.isActive',
-                'ta.twitter_account_id'
+                'id',
+                'name',
+                'type'
             ])
-            ->where('apis.deck_id','=', $deckId)
-            ->leftJoin('twitter_account_apis AS ta', 'apis.id', '=', 'ta.api_id')
-            ->where(function ($query) {
-                $query->where('ta.user_id', auth()->user()->id)
-                    ->orWhere('ta.twitter_account_id', '=', null);
-            })
+            ->where('apis.deck_id', '=', $deckId)
             ->get();
 
+        foreach ($apis as $api) {
+
+            $TwitterAccountApi = DB::table('twitter_account_apis')
+                ->select([
+                    'isActive',
+                ])
+                ->where('user_id', '=', auth()->user()->id)
+                ->where('api_id', '=', $api->id)
+                ->first();
+            if ($TwitterAccountApi === null) {
+                $api->isActive = false;
+
+            } else {
+
+                $api->isActive = $TwitterAccountApi->isActive;
+            }
+        }
+        dd($apis);
         $rtAndDeleteApis = $this->getRtAndDeleteApis($apis);
 
         return view('vuexy.decks.apis', [
