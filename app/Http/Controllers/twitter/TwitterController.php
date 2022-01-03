@@ -35,7 +35,7 @@ class TwitterController extends Controller
             abort(403);
         }
 
-        $OAUTH_CALLBACK = "http://127.0.0.1:8000/callback";
+        $OAUTH_CALLBACK = env('TWITTER_CALLBACK_URL', 'https://www.feed-help.de/callback');
         //Create Twitter App Instance
         $connection = new TwitterOAuth($api->key, $api->secret);
 
