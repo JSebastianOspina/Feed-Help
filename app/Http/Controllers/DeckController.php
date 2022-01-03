@@ -454,4 +454,11 @@ class DeckController extends Controller
 
     }
 
+    public function showRecord($deckId, $recordId)
+    {
+        $records = Record::where('deck_id', $deckId)->latest()->first();
+        $details = unserialize($records->extra_info);
+        return view('vuexy.decks.records.show', compact('details', 'deckId'));
+    }
+
 }
