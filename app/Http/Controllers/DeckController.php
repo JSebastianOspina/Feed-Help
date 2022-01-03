@@ -459,7 +459,7 @@ class DeckController extends Controller
     {
         $records = Record::find($recordId);
         if ($records === null) {
-            return redirect->back()->withError('No existe el tweet que deseas inspeccionar');
+            return redirect()->back()->withError('No existe el tweet que deseas inspeccionar');
         }
         $details = unserialize($records->extra_info);
         return view('vuexy.decks.records.show', compact('details', 'deckId'));
