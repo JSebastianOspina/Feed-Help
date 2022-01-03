@@ -335,10 +335,10 @@ class DeckController extends Controller
             $deck->save();
             //Delete the twitter account
             $twitterAccount->delete();
-        } else {
-            //delete the deck_user relationship (No twitter account has been attach yet)
-            $deckUser->delete();
         }
+
+        //delete the deck_user relationship (No twitter account has been attach yet)
+        $deckUser->delete();
 
         return back()->withSuccess('Usuario eliminado exitosamente');
     }
