@@ -71,17 +71,41 @@ class TwitterController extends Controller
         //Create twitter account record
         $extraInfo = $this->getAccountExtraInfo($access_token['screen_name']);
 
-        $twitterAccount = TwitterAccount::updateOrCreate(
-            [
-                'deck_id' => $api->deck->id,
-                'user_id' => auth()->user()->id,
-            ],
-            [
-                'username' => $access_token['screen_name'],
-                'followers' => $extraInfo['followers_count'],
-                'image_url' => $extraInfo['profile_image_url_https'],
-                'status' => 'pending',
-            ]);
+        /*  $twitterAccount = TwitterAccount::updateOrCreate(
+              [
+                  'deck_id' => $api->deck->id,
+                  'user_id' => auth()->user()->id,
+              ],
+              [
+                  'username' => $access_token['screen_name'],
+                  'followers' => $extraInfo['followers_count'],
+                  'image_url' => $extraInfo['profile_image_url_https'],
+                  'status' => 'pending',
+              ]);*/
+        $twitterAccount = TwitterAccount::where('deck_id', '=', $api->deck->id)
+            ->where('user_id', '=', auth()->user()->id)
+            ->first();
+
+        if ($twitterAccount) {
+            $twitterAccount->username = $access_token['screen_name'];
+            $twitterAccount->followers = $extraInfo['followers_count'];
+            $twitterAccount->image_url = $extraInfo['profile_image_url_https'];
+            $twitterAccount->status = 'pending';
+            $twitterAccount->save();
+        } else {
+            $twitterAccount = TwitterAccount::create(
+                [
+                    'deck_id' => $api->deck->id,
+                    'user_id' => auth()->user()->id,
+                    'username' => $access_token['screen_name'],
+                    'followers' => $extraInfo['followers_count'],
+                    'image_url' => $extraInfo['profile_image_url_https'],
+                    'status' => 'pending',
+                ]);
+            //Update deck followers
+            $api->deck->followers += $extraInfo['followers_count'];
+            $api->deck->save();
+        }
 
         //Store api credentials
         TwitterAccountApi::updateOrCreate(
@@ -97,17 +121,12 @@ class TwitterController extends Controller
             ]);
 
         //Sync the pivot table
-
         $deckUser->twitter_account_id = $twitterAccount->id;
         $deckUser->save();
-
 
         // Check if the user has already authorize all apis in order to active it account.
         $this->checkIfTwitterAccountHasAllApis($twitterAccount, $api->deck->id);
 
-        //Update deck followers
-        $api->deck->followers += $extraInfo['followers_count'];
-        $api->deck->save();
         //Redirect to view
         return redirect()->route('decks.apis.verify', ['deckId' => $api->deck->id]);
     }
