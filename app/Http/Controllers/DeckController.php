@@ -305,12 +305,12 @@ class DeckController extends Controller
             $deck_user->role = $request->input('role');
             $deck_user->save();
         } else {
+            //Sync pivot table
             DeckUser::create([
                 'user_id' => $newUser->id,
                 'deck_id' => $deckId,
                 'role' => $request->input('role')
             ]);
-            $newUser->decks()->sync([$deckId], ['role' => $request->input('role')]);
         }
         return back()->withSuccess('Se ha añadido el usuario y le has asignado un rol de: ' . $request->input('role'));
     }
