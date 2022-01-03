@@ -448,7 +448,8 @@ class TwitterController extends Controller
      */
     private function handleErrorInformation($twitterAccountApi, string &$notRtBy, $response, array &$extraInfo): void
     {
-        $notRtBy .= $twitterAccountApi->twitterAccount->username . ',';
+        $twitterAccount = $twitterAccountApi->twitterAccount;
+        $notRtBy .= isset($twitterAccount) ? $twitterAccountApi->twitterAccount->username . ',' : 'Usuario eliminado'.',';
         $extraInfo[] = (object)[
             'username' => $twitterAccountApi->twitterAccount->username,
             'status_code' => $response->errors[0]->code,
@@ -472,7 +473,7 @@ class TwitterController extends Controller
             $twitterAccountApi->isActive = false;
             $twitterAccountApi->save();
             $twitterAccount = $twitterAccountApi->twitterAccount;
-            if($twitterAccount){
+            if ($twitterAccount) {
 
                 $twitterAccount->status = 'pending';
                 $twitterAccount->save();
