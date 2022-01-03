@@ -155,7 +155,7 @@
                             @csrf
 
                             <div class="col-12">
-                                <label class="form-control-label" for="user_username">Administrador</label>
+                                <label class="form-control-label" for="user_username">Nombre de usuario (FeedDeck)</label>
                                 <input type="text" class="form-control" name="user_username" id="user_username">
                             </div>
 
