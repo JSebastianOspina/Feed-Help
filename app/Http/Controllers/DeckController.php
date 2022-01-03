@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Api;
 use App\Deck;
+use App\DeckUser;
 use App\Record;
 use App\TwitterAccount;
 use App\User;
@@ -223,6 +224,7 @@ class DeckController extends Controller
 
         $deckUsers = DB::table('deck_user')
             ->select([
+                'deck_user.role as role',
                 'u.username as userUsername', 'u.id as userId',
                 't.username as twitterUsername', 't.followers as twitterFollowers', 't.status as twitterStatus', 't.image_url',
             ])
@@ -295,8 +297,16 @@ class DeckController extends Controller
         if ($newUser === null) {
             return back()->withError('El usuario que intentas agregar al Deck no existe');
         }
-
-        $newUser->decks()->sync([$deckId], ['role' => $request->input('role')]);
+        //Sync pivot table
+        $deck_user = DeckUser::where('deck_id', $deckId)
+            ->where('user_id', $newUser->id)
+            ->first();
+        if ($deck_user !== null) {
+            $deck_user->role = $request->input('role');
+            $deck_user->save();
+        } else {
+            $newUser->decks()->sync([$deckId], ['role' => $request->input('role')]);
+        }
         return back()->withSuccess('Se ha añadido el usuario y le has asignado un rol de: ' . $request->input('role'));
     }
 
