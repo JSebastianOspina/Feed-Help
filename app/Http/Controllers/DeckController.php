@@ -394,7 +394,7 @@ class DeckController extends Controller
             return redirect()->route('decks.index')
                 ->withError('Parece que te perdiste, no perteneces al Deck al que querias vincular APIS ');
         }
-        return $deckId;
+        return auth()->user()->id;
         $apis = DB::table('apis')
             ->select([
                 'apis.id',
@@ -403,7 +403,7 @@ class DeckController extends Controller
                 'ta.isActive',
                 'ta.twitter_account_id'
             ])
-            ->where('apis.deck_id', $deckId)
+            ->where('apis.deck_id','=', $deckId)
             ->leftJoin('twitter_account_apis AS ta', 'apis.id', '=', 'ta.api_id')
             ->where(function ($query) {
                 $query->where('ta.user_id', auth()->user()->id)
