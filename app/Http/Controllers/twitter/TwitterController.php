@@ -472,8 +472,11 @@ class TwitterController extends Controller
             $twitterAccountApi->isActive = false;
             $twitterAccountApi->save();
             $twitterAccount = $twitterAccountApi->twitterAccount;
-            $twitterAccount->status = 'pending';
-            $twitterAccount->save();
+            if($twitterAccount){
+
+                $twitterAccount->status = 'pending';
+                $twitterAccount->save();
+            }
 
         }
     }
