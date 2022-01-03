@@ -24,10 +24,7 @@
                         <span>Grupo de Whatsapp</span>
                     </a>
                 @endif
-                <a class="btn btn-primary btn-sm me-1" href="{{route('decks.records',['deckId'=>$deck->id])}}">
-                    <i data-feather="book-open"></i>
-                    <span>Historial del Deck</span>
-                </a>
+
                 @if($hasPermission === true)
 
                     <a class="btn btn-primary btn-sm" href="{{route('decks.edit',['deck'=>$deck->id])}}">
@@ -100,15 +97,20 @@
                                         </div>
                                         <div>
                                               <span class="font-weight-bold d-block text-nowrap">
-                                                {{$user->userUsername}}
+                                                  {{$user->userUsername}}
                                                   @if($user->role === 'owner' || $user->role === 'admin')
                                                       <strong>
                                                         Admin
                                                       </strong>
                                                   @endif
                                             </span>
-                                            <small
-                                                class="text-muted">{{$user->twitterUsername ?? 'No vinculado'}} </small>
+                                            @if($user->twitterUsername == null)
+                                                <small class="text-muted">No vinculado</small>
+                                            @else
+                                                <small onclick="openTwitterUrl('{{$user->twitterUsername}}')"
+                                                       class="text-muted cursor-pointer">{{'@'.$user->twitterUsername}}</small>
+                                            @endif
+
                                         </div>
                                     </div>
                                 </td>
@@ -141,6 +143,12 @@
 
                         </tbody>
                     </table>
+                </div>
+                <div class="d-flex justify-content-center py-1">
+                    <a class="btn btn-primary btn-sm" href="{{route('decks.records',['deckId'=>$deck->id])}}">
+                        <i data-feather="book-open"></i>
+                        <span>Historial del Deck</span>
+                    </a>
                 </div>
 
             </div>
@@ -311,6 +319,11 @@
     <!-- TERMINA LA SECCIÓN DE LOS MODALES-->
 
     <script>
+
+        function openTwitterUrl(twitterUsername) {
+            window.open('https://twitter.com/' + twitterUsername, '_blank');
+        }
+
         async function makeRTRequest(tweetUrl) {
             let url = '{{route('makeRT')}}';
             let data = {
