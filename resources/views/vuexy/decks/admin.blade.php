@@ -83,6 +83,11 @@
                                                 Editar deck
                                             </button>
 
+                                            <button class="btn btn-danger me-1" data-bs-target="#deleteDeckModal"
+                                                    data-bs-toggle="modal">
+                                                Eliminar Deck
+                                            </button>
+
                                         </div>
                                     @endif
                                 </div>
@@ -98,7 +103,6 @@
                         <!-- User Pills -->
 
                         <div class="d-flex justify-content-end" style="margin-bottom: 15px">
-
 
                             <a class="btn btn-primary btn-sm me-1" href="{{route('decks.show',['deck'=>$deck->id])}}">
                                 <i data-feather="user"></i>
@@ -355,6 +359,37 @@
                                                 aria-label="Close">
                                             Cancelar
                                         </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--/ Edit Deck Modal -->
+
+                <!-- Edit Deck Modal -->
+                <div class="modal fade" id="deleteDeckModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered modal-edit-user">
+                        <div class="modal-content">
+                            <div class="modal-header bg-transparent">
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body pb-5 px-sm-5 pt-50">
+                                <div class="text-center mb-2">
+                                    <h1 class="mb-1">Eliminar Deck</h1>
+                                    <p>Esta accion es permanente, borrará todos los datos asociados al Deck</p>
+                                </div>
+                                <form class="row gy-1 pt-75" action="{{route('decks.destroy',['deck'=>$deck->id])}}"
+                                      method="POST">
+                                    @csrf
+                                    @method('DELETE')
+
+                                    <div class="col-12 text-center mt-2 pt-50">
+                                        <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                            Cancelar
+                                        </button>
+                                        <button type="submit" class="btn btn-primary me-1">Guardar cambios</button>
                                     </div>
                                 </form>
                             </div>

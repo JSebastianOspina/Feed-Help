@@ -330,19 +330,16 @@ class DeckController extends Controller
 
     public function destroy($id)
     {
-        if (
-        !(Auth::user()->hasRole(['admin-' . $id])
-            or Auth::user()->hasRole(['Owner']))
-        ) {
-            return back()->with('error', 'Ya esta parchado =)!!! .i.');
+        if (!$this->hasOwnerPermissions($id)) {
+            abort(403, 'No tienes permito realizar esta acción');
         }
-
-        $borrar = Deck::where('nombre', str_replace('_', ' ', $id))->first();
-        $borrar->delete();
-        Role::findByName($id)->delete();
-        Role::findByName('admin-' . $id)->delete();
-
-        return redirect()->route('decks.index');
+        $deck = Deck::where('id', $id)->first();
+        if ($deck === null) {
+            return redirect()->back()
+                ->withError('El Deck que intentas eliminar no existe');
+        }
+        $deck->delete();
+        return redirect()->route('decks.index')->withSuccess('Deck Eliminado exitosamente');
     }
 
 

@@ -17,13 +17,13 @@
                     <i data-feather="settings"></i>
                     <span>Gestionar apis</span>
                 </a>
-
-                <a class="btn btn-primary btn-sm me-1" href="{{$deck->whatsapp_group_url}}"
-                   target="_blank">
-                    <i data-feather="send"></i>
-                    <span>Grupo de Whatsapp</span>
-                </a>
-
+                @if($deck->whatsapp_group_url !== null)
+                    <a class="btn btn-primary btn-sm me-1" href="{{$deck->whatsapp_group_url}}"
+                       target="_blank">
+                        <i data-feather="send"></i>
+                        <span>Grupo de Whatsapp</span>
+                    </a>
+                @endif
                 <a class="btn btn-primary btn-sm me-1" href="{{route('decks.records',['deckId'=>$deck->id])}}">
                     <i data-feather="book-open"></i>
                     <span>Historial del Deck</span>
@@ -162,7 +162,8 @@
                             @csrf
 
                             <div class="col-12">
-                                <label class="form-control-label" for="user_username">Nombre de usuario (FeedDeck)</label>
+                                <label class="form-control-label" for="user_username">Nombre de usuario
+                                    (FeedDeck)</label>
                                 <input type="text" class="form-control" name="user_username" id="user_username">
                             </div>
 
