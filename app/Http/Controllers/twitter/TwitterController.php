@@ -10,7 +10,6 @@ use App\Record;
 use App\TwitterAccount;
 use App\TwitterAccountApi;
 use Carbon\Carbon;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -52,10 +51,16 @@ class TwitterController extends Controller
         return redirect($url);
     }
 
-    public function callback(Request $request): RedirectResponse
+    public function callback(Request $request)
     {
         $api = Api::find(session('apiId'));
-        $callback = "https://www.feed-help.de/callback";
+        //First, verify that the user belogs to the deck
+        $deckUser = DeckUser::where([['user_id', auth()->user()->id], ['deck_id', $api->deck->id]])->first();
+        if ($deckUser === null) {
+            return redirect()->route('decks.apis.verify', ['deckId' => $api->deck->id])
+                ->withError('No perteneces al Deck a el que estás intentando vincular');
+        }
+        $callback = env('TWITTER_CALLBACK_URL', 'https://www.feed-help.de/callback');
 
         //Create connection, identifying the api and retrieving the generated oauth info
         $connection = new TwitterOAuth($api->key, $api->secret, session('oauth_token'), session('oauth_token_secret'));
@@ -92,7 +97,7 @@ class TwitterController extends Controller
             ]);
 
         //Sync the pivot table
-        $deckUser = DeckUser::where([['user_id', auth()->user()->id], ['deck_id', $api->deck->id]])->first();
+
         $deckUser->twitter_account_id = $twitterAccount->id;
         $deckUser->save();
 

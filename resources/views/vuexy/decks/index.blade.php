@@ -106,7 +106,7 @@
                             <div class="col-12">
                                 <label class="form-label" for="rt_minutes">Minutos para RT</label>
                                 <input type="number" class="form-control" name="rt_minutes" id="rt_minutes" value="60"
-                                        min="60">
+                                       min="60">
                             </div>
 
                             <div class="col-12">
@@ -131,4 +131,5 @@
         <!--/ add new card modal  -->
         <!-- TERMINA LA SECCIÓN DE LOS MODALES-->
     @endif
+
 @endsection

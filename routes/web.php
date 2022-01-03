@@ -48,7 +48,7 @@ Route::delete('decks/{deckId}/apis/{apiId}', 'DeckController@deleteApi')->middle
 /* Ver estado actual de las apis(user) */
 Route::get('decks/{deckId}/apis', 'DeckController@verifyUserApis')->middleware('feedDeck')->name('decks.apis.verify');
 /* Re/autorizar una api */
-Route::post('apis/feedDeckorize', 'twitter\TwitterController@buildAuthorizeURL')->middleware('feedDeck')->name('decks.apis.feedDeckorize');
+Route::post('apis/authorize', 'twitter\TwitterController@buildAuthorizeURL')->middleware('feedDeck')->name('decks.apis.authorize');
 /* Hacer RT */
 Route::post('/makeRT', 'twitter\TwitterController@makeRT')->middleware('feedDeck')->name('makeRT');
 

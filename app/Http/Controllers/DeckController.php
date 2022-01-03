@@ -5,8 +5,6 @@ namespace App\Http\Controllers;
 use App\Api;
 use App\Deck;
 use App\Record;
-use App\Rt;
-use App\System;
 use App\TwitterAccount;
 use App\User;
 use Illuminate\Http\Request;
@@ -35,7 +33,8 @@ class DeckController extends Controller
     public function edit($deckId)
     {
         if (!($this->hasAdminPermissions($deckId))) {
-            abort(403);
+            return redirect()->route('decks.index')->withError('No eres admin de este Deck ¿pero aun así quieres editarlo? 🤡 ');
+
         }
         $canEditDeck = false;
 
@@ -44,6 +43,9 @@ class DeckController extends Controller
             $canEditDeck = true;
         }
         $deck = Deck::where('id', $deckId)->with(['twitterAccounts', 'apis'])->first();
+        if ($deck === null) {
+            return redirect()->route('decks.index')->withError('¿Estás bien? parece que estas intentando editar a un Deck que no existe 🤡 ');
+        }
         return view('vuexy.decks.admin', compact('deck', 'canEditDeck'));
     }
 
@@ -53,10 +55,7 @@ class DeckController extends Controller
         $deckRole = $user->getDeckInfo($deck_id)['role'];
 
         //If doesnt have the required role, return 403 error code
-        if (!($deckRole === "owner" || $deckRole === "admin" || !$user->isOwner() )) {
-            return false;
-        }
-        return true;
+        return $deckRole === "owner" || $deckRole === "admin" || $user->isOwner();
     }
 
     private function hasOwnerPermissions($deck_id): bool
@@ -71,7 +70,7 @@ class DeckController extends Controller
     public function store(Request $request)
     {
         if (!Auth::user()->isOwner()) {
-            abort(403);
+            return redirect()->route('decks.index')->withError('Ira we, así quedaste 🤡 🤡 ');
         }
         $validatedData = $request->validate([
             'icon' => 'required',
@@ -83,7 +82,7 @@ class DeckController extends Controller
 
         $deckAdmin = User::where('username', $request->input('owner_username'))->first();
         if ($deckAdmin === null) {
-            return back()->withErrors('El nombre de usuario proporcionado no existe');
+            return back()->withError('El nombre de usuario proporcionado no existe');
         }
 
         $deck = Deck::create([
@@ -99,14 +98,16 @@ class DeckController extends Controller
         //Assign permissions
         $deckAdmin->decks()->attach($deck->id, ['role' => 'owner']);
 
-        return back()->withErrors('Deck creado exitosamente');
+        return back()->withSuccess('Deck creado exitosamente');
     }
 
     public function storeApi(Request $request, $deckId)
     {
         //Check if the user can not perform the action
         if (!$this->hasAdminPermissions($deckId)) {
-            abort(403);
+            return redirect()->route('decks.edit', ['deck' => $deckId])
+                ->withError('No tienes permisos para realizar esta acción');
+
         }
         //Validate the request
         $validatedData = $request->validate([
@@ -122,14 +123,17 @@ class DeckController extends Controller
 
         $api = Api::create($request->all());
 
-        return redirect()->route('decks.edit', ['deck' => $deckId]);
+        return redirect()->route('decks.edit', ['deck' => $deckId])
+            ->withSuccess('API creada exitosamente');
     }
 
     public function updateApi(Request $request, $deckId, $apiId)
     {
         //Check if the user can not perform the action
         if (!$this->hasAdminPermissions($deckId)) {
-            abort(403);
+
+            return redirect()->route('decks.edit', ['deck' => $deckId])
+                ->withError('No tienes permisos para realizar esta acción');
         }
         //Validate the request
         $validatedData = $request->validate([
@@ -145,7 +149,8 @@ class DeckController extends Controller
         $api->save();
 
 
-        return redirect()->route('decks.edit', ['deck' => $deckId]);
+        return redirect()->route('decks.edit', ['deck' => $deckId])
+            ->withSuccess('API actualizada exitosamente');
     }
 
     public function deleteApi($deckId, $apiId)
@@ -157,47 +162,15 @@ class DeckController extends Controller
         //Validate the request
         $api = Api::find($apiId);
         if ($api === null) {
-            abort(404);
+            return redirect()
+                ->route('decks.edit', ['deck' => $deckId])
+                ->withError('La API que intentas borrar no existe');
         }
         $api->delete();
-        return redirect()->route('decks.edit', ['deck' => $deckId]);
+        return redirect()->route('decks.edit', ['deck' => $deckId])
+            ->withSuccess('API borrada exitosamente');
     }
 
-    public function disableDeck($deck)
-    {
-
-        if (
-        !(Auth::user()->hasRole(['admin-' . $deck])
-            or Auth::user()->hasRole(['Owner']))
-        ) {
-            return back()->with('error', 'Ya esta parchado =)!!! .i.');
-        }
-        $deck = Deck::where('nombre', str_replace('_', ' ', $deck))->first();
-        $deck->enabled = 0;
-        $deck->save();
-        return back()->with('error', 'Deck desactivado con exito');
-    }
-
-    public function enableDeck($deck)
-    {
-        if (
-        !(Auth::user()->hasRole(['admin-' . $deck])
-            or Auth::user()->hasRole(['Owner']))
-        ) {
-            return back()->with('error', 'Ya esta parchado =)!!! .i.');
-        }
-        $deck = Deck::where('nombre', str_replace('_', ' ', $deck))->first();
-        $deck->enabled = 1;
-        $deck->save();
-        return back()->with('error', 'Deck activado con exito');
-    }
-
-    public function historial($id)
-    {
-        $histo = Rt::where('deck', $id)->orderBy('created_at', 'desc')->limit(10)->get();
-
-        return view('panel.deck.historial', compact('histo', 'id'));
-    }
 
     public function consentido($username)
     {
@@ -233,7 +206,7 @@ class DeckController extends Controller
         //Check if the Deck exists
         $deck = Deck::find($id);
         if ($deck === null) {
-            abort(404);
+            return redirect()->route('decks.index')->withError('¿Estás bien? parece que estas intentando acceder a un Deck que no existe 🤡');
         }
 
         //Lets check if the user belongs to this deck.
@@ -242,8 +215,9 @@ class DeckController extends Controller
         $deckInfo = $user->getDeckInfo($id);
         //If not belongs to it, abort the request.
         if ($deckInfo['hasPermission'] === false) {
-            abort(403, 'No tienes permiso para acceder a este Deck. comunicate
-            con el administrador si crees que se trata de un error');
+            return redirect()->route('decks.index')
+                ->withError('No tienes permiso para acceder a este Deck. Comunicate con el administrador si crees que se trata de un error');
+
         }
         //The user has permission, let's continue
 
@@ -260,12 +234,12 @@ class DeckController extends Controller
 
         //If the user is owner or admin , lets
         $userRole = $deckInfo['role'];
-        if ($userRole === 'owner' || $userRole === 'admin') {
+        if ($this->hasAdminPermissions($id)) {
             $hasPermission = true;
             $users = DB::table('users')->select('username', 'id')->get();
             return view('vuexy.decks.show', compact('deck', 'deckUsers', 'users', 'hasPermission'));
-
         }
+
         $hasPermission = false;
         return view('vuexy.decks.show', compact('deck', 'deckUsers', 'hasPermission'));
 
@@ -276,7 +250,8 @@ class DeckController extends Controller
         $requestedData = $request->all();
 
         if (!$this->hasOwnerPermissions($deckId)) {
-            abort(403);
+            return redirect()->route('decks.index')
+                ->withError('No puedes editar un deck del cual no eres administrador');
         }
         //Validate the request
         $validatedData = $request->validate([
@@ -296,7 +271,8 @@ class DeckController extends Controller
         }
         $deck->fill($requestedData);
         $deck->save();
-        return redirect()->route('decks.edit', ['deck' => $deckId]);
+        return redirect()->route('decks.edit', ['deck' => $deckId])
+            ->withSuccess('Deck actualizado exitosamente');
     }
 
     public function newUser(Request $request, $deckId)
@@ -307,6 +283,7 @@ class DeckController extends Controller
         }
         //Check if is asking for a valid role
         Validator::make($request->all(), [
+            'user_username' => 'required|string',
             'role' => [
                 'required',
                 'string',
@@ -314,15 +291,13 @@ class DeckController extends Controller
             ],
         ]);
 
-        $newUser = User::find($request->input('user_id'));
-        $deckRole = $newUser->getDeckInfo($deckId);
-        //Check if the user already exist in the deck
-        if ($deckRole['hasPermission'] === true) {
-            return abort(403, 'El usuario ya pertenece al deck');
+        $newUser = User::where('username', $request->input('user_username'))->first();
+        if ($newUser === null) {
+            return back()->withError('El usuario que intentas agregar al Deck no existe');
         }
 
         $newUser->decks()->sync([$deckId], ['role' => $request->input('role')]);
-        return back();
+        return back()->withSuccess('Se ha añadido el usuario y le has asignado un rol de: ' . $request->input('role'));
     }
 
     public function deleteUser($deckId, $userId)
@@ -335,7 +310,8 @@ class DeckController extends Controller
             ->where('deck_id', $deckId)
             ->first();
         if (!$deckUser) {
-            abort(404);
+            return back()->withError('El usuario que intentas eliminar no existe');
+
         }
         //delete twitter account
         $twitterAccount = TwitterAccount::find($deckUser->twitter_account_id);
@@ -348,32 +324,7 @@ class DeckController extends Controller
             ->where('deck_id', $deckId)
             ->delete();
 
-        return back()->with('mensaje', 'Usuario eliminado exitosamente');
-    }
-
-    public function newAdmin(Request $request, $id)
-    {
-
-        if (
-        !(Auth::user()->hasRole(['admin-' . $id])
-            or Auth::user()->hasRole(['Owner']))
-        ) {
-            return back()->with('error', 'Ya esta parchado =)!!! .i.');
-        }
-
-
-        $user = User::where('username', $request->input("username"))->first();
-        if (!($user == null)) {
-            if ($request->input("accion") == "Añadir") {
-                $user->assignRole('admin-' . $id);
-                return back();
-            } else {
-                $user->removeRole('admin-' . $id);
-                return back();
-            }
-        } else {
-            return back()->with('error', '¡Cuidado! ese usuario no está registrado');
-        }
+        return back()->withSuccess('Usuario eliminado exitosamente');
     }
 
 
@@ -402,17 +353,6 @@ class DeckController extends Controller
         return '<h1>Clear Config cleared</h1>';
     }
 
-    public function updateOrCreateSystemStatus(Request $request)
-    {
-        $statusName = System::getStatusName($request->input('statusId'));
-        $system_status = System::first();
-        if (!$system_status) {
-            $system_status = new System ();
-        }
-        $system_status->status = $statusName;
-        $system_status->save();
-        return redirect()->route('news.index');
-    }
 
     public function getDecksFollowers()
     {
@@ -439,7 +379,8 @@ class DeckController extends Controller
     public function verifyUserApis($deckId)
     {
         if (!(auth()->user()->getDeckInfo($deckId)['hasPermission'])) {
-            abort(403, 'No Perteneces al deck en cuestion');
+            return redirect()->route('decks.index')
+                ->withError('Parece que te perdiste, no perteneces al Deck al que querias vincular APIS ');
         }
 
         $apis = DB::table('apis')

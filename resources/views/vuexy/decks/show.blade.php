@@ -88,7 +88,7 @@
                                             <img
                                                 style="width: 32px; height:32px"
                                                 class="rounded-circle"
-                                                src="{{$user->image_url ?? 'https://abs.twimg.com/sticky/default_profile_images/default_profile_400x400.png'}}"
+                                                src="{{$user->image_url ?? asset('2.0/app-assets/images/avatars/default.png')}}"
                                                 alt="avatar">
                                         </div>
                                         <div>
@@ -96,7 +96,7 @@
                                                 {{$user->userUsername}}
                                             </span>
                                             <small
-                                                class="text-muted">{{$user->twitterUsername ?? '@JohnDoe'}} </small>
+                                                class="text-muted">{{$user->twitterUsername ?? 'No vinculado'}} </small>
                                         </div>
                                     </div>
                                 </td>
@@ -155,13 +155,8 @@
                             @csrf
 
                             <div class="col-12">
-                                <label class="form-label" for="user_id">Seleccionar usuario</label>
-                                <select class="form-select form-control"
-                                        id="user_id" name="user_id">
-                                    @foreach($users as $user)
-                                        <option value="{{$user->id}}">{{$user->username}}</option>
-                                    @endforeach
-                                </select>
+                                <label class="form-control-label" for="user_username">Administrador</label>
+                                <input type="text" class="form-control" name="user_username" id="user_username">
                             </div>
 
                             <div class="col-12">
@@ -270,20 +265,20 @@
                 <div class="modal-body px-sm-5 mx-50 pb-5">
                     <div class="d-flex flex-column justify-content-center h-100">
                         <h1 class="text-center " id="addNewCardTitle">¡Upa, ha ocurrido un error!</h1>
-                        <h3 class="text-left mt-2">
+                        <h4 class="text-left mt-2">
                             Nuestro equipo de monos se encontraba trabajando fuertemente en tu petición ...
-                        </h3>
-                        <h3 class="text-left my-1">
+                        </h4>
+                        <h4 class="text-left my-1">
                             Sin embargo, el mono negro de la derecha detectó un error.
-                        </h3>
+                        </h4>
                         <div class="w-md-50 text-center">
                             <img src="https://i.giphy.com/media/xT5LMrxYauvZhhzL6U/giphy.webp" alt=""
                                  class="img-fluid">
                         </div>
 
-                        <h3 class="text-left mt-2">
+                        <h4 class="text-left mt-2">
                             El mono dijo:
-                        </h3>
+                        </h4>
                         <h4 id="errorMessage">....</h4>
                         <div class="d-flex justify-content-center mt-1">
                             <button type="button" class="btn btn-danger waves-effect waves-float waves-light"

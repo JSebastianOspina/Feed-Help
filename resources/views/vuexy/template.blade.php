@@ -97,7 +97,7 @@
                             class="user-name fw-bolder">{{auth()->user()->name}}</span><span
                             class="user-status">User</span></div>
                     <span class="avatar"><img class="round"
-                                              src="{{asset('2.0/app-assets/images/portrait/small/avatar-s-11.jpg')}}"
+                                              src="{{asset('2.0/app-assets/images/avatars/default.png')}}"
                                               alt="avatar" height="40" width="40"><span
                             class="avatar-status-online"></span></span>
                 </a>
@@ -301,6 +301,7 @@
 </div>
 <!-- END: Main Menu-->
 
+
 <!-- BEGIN: Content-->
 <div class="app-content content ">
 
@@ -316,7 +317,7 @@
     <p class="clearfix mb-0"><span class="float-md-start d-block d-md-inline-block mt-25">COPYRIGHT &copy; 2021<a
                 class="ms-25" href="https://1.envato.market/pixinvent_portfolio" target="_blank">FeedDeck</a><span
                 class="d-none d-sm-inline-block">, All rights Reserved</span></span><span
-            class="float-md-end d-none d-md-block">Hand-crafted & Made with<i data-feather="heart"></i></span></p>
+            class="float-md-end d-none d-md-block">Hand-crafted & Made with <i data-feather="heart"></i></span></p>
 </footer>
 <button class="btn btn-primary btn-icon scroll-top" type="button"><i data-feather="arrow-up"></i></button>
 <!-- END: Footer-->
@@ -346,6 +347,22 @@
         }
     })
 </script>
+@if(\Illuminate\Support\Facades\Session::has('success'))
+    <script>
+        toastr['success']('{!! session()->get('success') !!}', '¡Exito!', {
+            closeButton: true,
+            tapToDismiss: false,
+        });
+    </script>
+@endif
+@if(\Illuminate\Support\Facades\Session::has('error'))
+    <script>
+        toastr['error']('{!! session()->get('error') !!}', 'Algo salió mal', {
+            closeButton: true,
+            tapToDismiss: false,
+        });
+    </script>
+@endif
 </body>
 <!-- END: Body-->
 
