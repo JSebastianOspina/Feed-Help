@@ -278,8 +278,6 @@ class TwitterController extends Controller
                 //Store the information from the accounts that didn't RT
                 $this->handleErrorInformation($twitterAccountApi, $notRtBy, $response, $extraInfo);
 
-                // Check if the user has already authorize all apis in order to active it account.
-                $this->checkIfTwitterAccountHasAllApis($userTwitterAccount, $deck->id);
             }
         }
 
