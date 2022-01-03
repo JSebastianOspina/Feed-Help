@@ -394,7 +394,7 @@ class DeckController extends Controller
             return redirect()->route('decks.index')
                 ->withError('Parece que te perdiste, no perteneces al Deck al que querias vincular APIS ');
         }
-
+        return $deckId;
         $apis = DB::table('apis')
             ->select([
                 'apis.id',
