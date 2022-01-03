@@ -421,7 +421,6 @@ class DeckController extends Controller
                 $api->isActive = $TwitterAccountApi->isActive;
             }
         }
-        dd($apis);
         $rtAndDeleteApis = $this->getRtAndDeleteApis($apis);
 
         return view('vuexy.decks.apis', [
