@@ -72,7 +72,7 @@ Route::get('decks/{deckId}/records/{recordId}', 'DeckController@showRecord')->mi
 Route::post('/system', 'SystemController@store')->middleware('feedDeck', 'isOwner')->name('system.store');
 
 Route::get('/theme', function () {
-
+    return env('TWITTER_CALLBACK_URL');
     dd(Carbon::now()->subMinutes(60));
 
     $lastRecord = Record::where('username', 'crazysebas')
