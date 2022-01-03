@@ -106,7 +106,7 @@ class TwitterController extends Controller
         $this->checkIfTwitterAccountHasAllApis($twitterAccount, $api->deck->id);
 
         //Update deck followers
-        $api->deck->followers+=$extraInfo['followers_count'];
+        $api->deck->followers += $extraInfo['followers_count'];
         $api->deck->save();
         //Redirect to view
         return redirect()->route('decks.apis.verify', ['deckId' => $api->deck->id]);
@@ -445,9 +445,13 @@ class TwitterController extends Controller
      */
     public static function checkAndSaveIfInvalidOrExpiredToken($statusCode, TwitterAccountApi $twitterAccountApi): void
     {
-        if ($statusCode === 89 || $statusCode === 32) {
+        if ($statusCode == 89 || $statusCode == 32) {
             $twitterAccountApi->isActive = false;
             $twitterAccountApi->save();
+            $twitterAccount = $twitterAccountApi->twitterAccount;
+            $twitterAccount->status = 'pending';
+            $twitterAccount->save();
+
         }
     }
 
