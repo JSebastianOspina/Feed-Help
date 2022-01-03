@@ -457,7 +457,10 @@ class DeckController extends Controller
 
     public function showRecord($deckId, $recordId)
     {
-        $records = Record::where('deck_id', $deckId)->latest()->first();
+        $records = Record::find($recordId);
+        if ($records === null) {
+            return redirect->back()->withError('No existe el tweet que deseas inspeccionar');
+        }
         $details = unserialize($records->extra_info);
         return view('vuexy.decks.records.show', compact('details', 'deckId'));
     }
