@@ -222,16 +222,16 @@
                         <div class="card-footer">
                             <small class="text-muted">Publicado en {{$new->updated_at}}</small>
                             <br>
-                            <form action="{{route('news.delete',['id'=>$new->id])}}" method="POST"
-                                  class="text-center">
-                                @csrf
-                                @method('delete')
-                                <button type="submit" class="btn btn-flat-danger mt-1">Eliminar
-                                    publicación
-                                </button>
-                            </form>
-
-
+                            @if(auth()->user()->isOwner())
+                                <form action="{{route('news.delete',['id'=>$new->id])}}" method="POST"
+                                      class="text-center">
+                                    @csrf
+                                    @method('delete')
+                                    <button type="submit" class="btn btn-flat-danger mt-1">Eliminar
+                                        publicación
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                     </div>
                 </div>
