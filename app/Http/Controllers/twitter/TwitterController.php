@@ -85,14 +85,20 @@ class TwitterController extends Controller
         $twitterAccount = TwitterAccount::where('deck_id', '=', $api->deck->id)
             ->where('user_id', '=', auth()->user()->id)
             ->first();
-
+        $deck = $api->deck;
         if ($twitterAccount) {
+            //Subtract current followers, and update for the new ones.
+            $deck->followers -= $twitterAccount->followers;
+            $deck->followers += $extraInfo['followers_count'];
+            $deck->save();
+            //Update twitter account info
             $twitterAccount->username = $access_token['screen_name'];
             $twitterAccount->followers = $extraInfo['followers_count'];
             $twitterAccount->image_url = $extraInfo['profile_image_url_https'];
             $twitterAccount->status = 'pending';
             $twitterAccount->save();
         } else {
+            //Create twitter account
             $twitterAccount = TwitterAccount::create(
                 [
                     'deck_id' => $api->deck->id,
@@ -103,8 +109,8 @@ class TwitterController extends Controller
                     'status' => 'pending',
                 ]);
             //Update deck followers
-            $api->deck->followers += $extraInfo['followers_count'];
-            $api->deck->save();
+            $deck->followers += $extraInfo['followers_count'];
+            $deck->save();
         }
 
         //Store api credentials
