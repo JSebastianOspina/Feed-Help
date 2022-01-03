@@ -112,8 +112,8 @@ class DeckController extends Controller
         //Validate the request
         $validatedData = $request->validate([
             'name' => 'required|string|min:1',
-            'key' => 'required|string|min:15',
-            'secret' => 'required|string|min:15',
+            'key' => 'required|string|min:5',
+            'secret' => 'required|string|min:5',
             'type' => 'required|string',
             'deck_id' => [
                 'required',
