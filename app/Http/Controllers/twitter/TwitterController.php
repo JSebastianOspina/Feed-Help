@@ -451,7 +451,7 @@ class TwitterController extends Controller
         $twitterAccount = $twitterAccountApi->twitterAccount;
         $notRtBy .= isset($twitterAccount->username) ? $twitterAccount->username . ',' : 'Usuario eliminado'.',';
         $extraInfo[] = (object)[
-            'username' => $twitterAccountApi->twitterAccount->username,
+            'username' => $twitterAccount->username ?? 'Usuario eliminado',
             'status_code' => $response->errors[0]->code,
             'message' => $response->errors[0]->message,
         ];
