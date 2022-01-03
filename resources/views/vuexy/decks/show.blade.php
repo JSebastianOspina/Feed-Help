@@ -100,7 +100,12 @@
                                         </div>
                                         <div>
                                               <span class="font-weight-bold d-block text-nowrap">
-                                                {{$user->userUsername}} {{($user->role === 'owner' || $user->role === 'admin') ? '[ADM]': '' }}
+                                                {{$user->userUsername}}
+                                                  @if($user->role === 'owner' || $user->role === 'admin')
+                                                      <strong>
+                                                        Admin
+                                                      </strong>
+                                                  @endif
                                             </span>
                                             <small
                                                 class="text-muted">{{$user->twitterUsername ?? 'No vinculado'}} </small>
