@@ -508,7 +508,6 @@ class TwitterController extends Controller
     public function masterRT(Request $request)
     {
 
-
         $tweetId = $this->getTweetId($request);
 
         $this->verifyIfTweetHasAlreadyBeenTweeted($tweetId);

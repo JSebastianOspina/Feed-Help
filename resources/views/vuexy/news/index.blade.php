@@ -21,11 +21,7 @@
                         data-bs-target="#addNewModal">
                     Crear nueva noticia
                 </button>
-                <button type="button" class="btn btn-primary brtwaves-effect waves-float waves-light me-1"
-                        data-bs-toggle="modal"
-                        data-bs-target="#RTMasterModal">
-                    RT Master
-                </button>
+
                 <button type="button" class="btn btn-primary brtwaves-effect waves-float waves-light "
                         data-bs-toggle="modal"
                         data-bs-target="#editDeckModal">
