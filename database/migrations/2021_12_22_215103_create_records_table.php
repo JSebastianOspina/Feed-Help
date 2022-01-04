@@ -18,7 +18,7 @@ class CreateRecordsTable extends Migration
             $table->string('username');
             $table->string('tweet_id');
             $table->string('success_rt');
-            $table->string('not_rt_by');
+            $table->text('not_rt_by');
             $table->text('extra_info');
             $table->boolean('pending');
             $table->foreignId('deck_id')->constrained()->onDelete('cascade');

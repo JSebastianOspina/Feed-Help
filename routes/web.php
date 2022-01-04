@@ -98,8 +98,6 @@ Route::get('/checkShadowBan/{twitterAccount}', function ($twitterAccount) {
     print_r(json_decode($response)->content);
 })->middleware('feedDeck')->name('checkShadowBan');
 
-Route::get('decks/{id}/rate', 'twitter\TwitterController@limite')->middleware('feedDeck')->name('limite');
-
 Route::view('mantenimiento-view', 'mantenimiento')->name('mantenimiento-view');
 
 
@@ -109,9 +107,6 @@ Route::get('/ver-alquiler', 'DeckController@verArquiler')->middleware('feedDeck'
 
 
 Route::get('/config-cache', 'DeckController@cache');
-
-// Activar / Desactivar Deck
-Route::post('/systemStatus', 'DeckController@updateOrCreateSystemStatus')->middleware('feedDeck', 'isOwner')->name('updateOrCreateSystemStatus');
 
 
 Auth::routes();

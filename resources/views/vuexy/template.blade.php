@@ -6,16 +6,39 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=0,minimal-ui">
-    <meta name="description"
-          content="Vuexy admin is super flexible, powerful, clean &amp; modern responsive bootstrap 4 admin template with unlimited possibilities.">
-    <meta name="keywords"
-          content="admin template, Vuexy admin template, dashboard template, flat admin template, responsive admin template, web app">
-    <meta name="author" content="PIXINVENT">
-    <title>FeedDeck 2.0</title>
+    <!-- Primary Meta Tags -->
+    <title>Feed-Deck | Primer sistema con Inteligencia Artifical</title>
+    <meta name="title" content="Feed-Deck | Primer sistema con Inteligencia Artifical">
+    <meta name="description" content="FeedDeck, es el primer sistema con Inteligencia Artifical desarrollado para la gestion de cuentas de twitter| Actualizando constantemente para mejorar. ">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.feed-help.de/login">
+    <meta property="og:title" content="Feed-Deck | Primer sistema con Inteligencia Artificial">
+    <meta property="og:description" content="FeedDeck, es el primer sistema con Inteligencia Artificial desarrollado para la gestion de cuentas | Actualizando constantemente para mejorar. ">
+    <meta property="og:image" content="https://www.feed-help.de/image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.feed-help.de/login">
+    <meta property="twitter:title" content="Feed-Deck | Primer sistema con Inteligencia Artificial">
+    <meta property="twitter:description" content="FeedDeck, es el primer sistema con Inteligencia Artifical desarrollado para la gestion de cuentas | Actualizando constantemente para mejorar. ">
+    <meta property="twitter:image" content="https://www.feed-help.de/image.jpg">
     <link rel="apple-touch-icon" href="{{asset('2.0/app-assets/images/ico/apple-icon-120.png')}}">
     <link rel="shortcut icon" type="image/x-icon" href="{{asset('2.0/app-assets/images/ico/favicon.ico')}}">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600"
           rel="stylesheet')}}">
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-174907300-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-174907300-1');
+    </script>
+
 
     <!-- BEGIN: Vendor CSS-->
     <link rel="stylesheet" type="text/css" href="{{asset('2.0/app-assets/vendors/css/vendors.min.css')}}">
