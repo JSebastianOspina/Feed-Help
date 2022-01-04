@@ -505,6 +505,9 @@ class TwitterController extends Controller
 
     public function masterRT(Request $request)
     {
+        if(!(auth()->user()->isAdmin())) {
+            abort(404, 'Eso tiliiin ');
+        }
         session(['isTweeting' => false]);
 
         $request->validate([
