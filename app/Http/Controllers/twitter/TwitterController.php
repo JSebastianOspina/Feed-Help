@@ -246,6 +246,10 @@ class TwitterController extends Controller
             ->where('type', 'rt')
             ->get();
 
+        /* Deck verification starts */
+        //Check if the deck has apis attached
+        $this->verifyIfDeckHasApis($apis);
+
         //Pick a random api
         $selectedApi = $apis->random();
 
@@ -256,9 +260,7 @@ class TwitterController extends Controller
         //Verify if the user belongs to the deck
         $this->verifyIfUserBelongsToTheDeck($user, $deckId);
 
-        /* Deck verification starts */
-        //Check if the deck has apis attached
-        $this->verifyIfDeckHasApis($apis);
+
 
         /*TwitterAccount verification starts, first retrieve it */
         $userTwitterAccount = TwitterAccount::where('deck_id', $deckId)
@@ -545,11 +547,6 @@ class TwitterController extends Controller
                 ->where('type', 'rt')
                 ->get();
 
-            //Pick a random api
-            $selectedApi = $apis->random();
-
-            /* ---------- THE REQUEST VERIFICATION STARTS --------*/
-
             /* Deck verification starts */
             //Check if the deck has apis attached if not, continue to next deck
 
@@ -557,7 +554,8 @@ class TwitterController extends Controller
                 continue;
             }
 
-            /* ---------- THE REQUEST VERIFICATION ENDS --------*/
+            //Pick a random api
+            $selectedApi = $apis->random();
 
             //Get all twitter accounts attached to that api
             $twitterAccountsApis = $selectedApi->twitterAccountApis;
