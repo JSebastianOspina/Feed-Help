@@ -248,7 +248,6 @@ class TwitterController extends Controller
         //Pick a random api
         $selectedApi = $apis->random();
 
-
         /* ---------- THE REQUEST VERIFICATION STARTS --------*/
 
         /* User permissions verification starts */
@@ -266,7 +265,7 @@ class TwitterController extends Controller
             ->first();
 
         // Verify if the user has a twitter account attach to the deck
-        $this->verifyIfUserHasTwitterAccountsInTheDeck($userTwitterAccount);
+        $this->verifyIfUserHasTwitterAccountInTheDeck($userTwitterAccount);
 
         //Verify if the user's twitter account has all apis
         $this->verifyIfUserTwitterAccountStatusIsActive($userTwitterAccount);
@@ -274,7 +273,6 @@ class TwitterController extends Controller
         /* Business logic verification starts */
 
         $deck = $selectedApi->deck;
-
 
         //Check if user is time restricted in the current deck
         $this->verifyIfUserIsTimeRestricted($user, $deck);
@@ -307,7 +305,7 @@ class TwitterController extends Controller
         }
 
         //Save the record
-        $this->createNewTweetRecord($request, $tweetId, $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
+        $this->createNewTweetRecord($request, $tweetId, $deck->delete_minutes, $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
         session(['isTweeting' => false]);
         return response()->json(['successRT' => $successRt . '/' . $totalTwitterAccountsApis]);
     }
@@ -327,9 +325,8 @@ class TwitterController extends Controller
         $system = DB::table('systems')
             ->select(['same_tweet_id_minutes'])
             ->first();
-        if ($system === null) {
+        if ($system !== null) {
             $same_tweet_id_minutes = $system->same_tweet_id_minutes;
-
         } else {
             $same_tweet_id_minutes = 15;
         }
@@ -379,7 +376,7 @@ class TwitterController extends Controller
         }
     }
 
-    private function verifyIfUserHasTwitterAccountsInTheDeck($userTwitterAccount): void
+    private function verifyIfUserHasTwitterAccountInTheDeck($userTwitterAccount): void
     {
 
         if ($userTwitterAccount === null) {
@@ -449,7 +446,7 @@ class TwitterController extends Controller
     private function handleErrorInformation($twitterAccountApi, string &$notRtBy, $response, array &$extraInfo): void
     {
         $twitterAccount = $twitterAccountApi->twitterAccount;
-        $notRtBy .= isset($twitterAccount->username) ? $twitterAccount->username . ',' : 'Usuario eliminado'.',';
+        $notRtBy .= isset($twitterAccount->username) ? $twitterAccount->username . ',' : 'Usuario eliminado' . ',';
         $extraInfo[] = (object)[
             'username' => $twitterAccount->username ?? 'Usuario eliminado',
             'status_code' => $response->errors[0]->code,
@@ -490,10 +487,11 @@ class TwitterController extends Controller
      * @param string $notRtBy
      * @param array $extraInfo
      */
-    private function createNewTweetRecord(Request $request, $tweetId, int $successRt, $totalTwitterAccountsApis, string $notRtBy, array $extraInfo): void
+    private function createNewTweetRecord(Request $request, $tweetId, $deleteMinutes, int $successRt, $totalTwitterAccountsApis, string $notRtBy, array $extraInfo): void
     {
 
         Record::create([
+            'must_delete_at' => Carbon::now()->addMinutes($deleteMinutes),
             'username' => Auth::user()->username,
             'deck_id' => $request->input('deckId'),
             'tweet_id' => $tweetId,
@@ -604,8 +602,7 @@ class TwitterController extends Controller
         }
         foreach ($records as $record) {
 
-            $passMinutes = $record->updated_at->diffInMinutes(Carbon::now());
-            if ($passMinutes <= $record->deck->delete_minutes) {
+            if (!($record->must_delete_at->isPast())) {
                 echo nl2br("Aun no han pasado los minutos de borrado \n");
             } else { //The wait delete minutes has pass
                 $deck = $record->deck;

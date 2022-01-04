@@ -35,6 +35,7 @@ use Illuminate\Database\Eloquent\Model;
 class Record extends Model
 {
     protected $guarded = [];
+    protected $dates = ['must_delete_at'];
 
     public function deck()
     {

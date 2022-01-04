@@ -35,6 +35,7 @@
                     <table class="table">
                         <thead>
                         <tr>
+                            <th>Hora</th>
                             <th>Usuario</th>
                             <th>ID del Tweet</th>
                             <th>Cantidad RT exitosos</th>
@@ -46,6 +47,7 @@
                         <tbody>
                         @foreach($records as $record)
                             <tr>
+                                <td>{{$record->created_at}}</td>
                                 <td>{{$record->username}}</td>
                                 <td>
                                     <a href="{{route('decks.records.show',['deckId'=>$deckId, 'recordId' => $record->id])}}">
