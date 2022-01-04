@@ -72,7 +72,7 @@
                                             <label class="form-label" for="delete_minutes">Minutos para borrar RT</label>
                                             <input type="number" class="form-control" name="delete_minutes"
                                                    id="delete_minutes"
-                                                   min="15" required value="10">
+                                                   min="10" required value="10">
                                         </div>
 
 

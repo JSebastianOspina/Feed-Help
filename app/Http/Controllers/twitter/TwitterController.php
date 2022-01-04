@@ -4,6 +4,7 @@ namespace App\Http\Controllers\twitter;
 
 use Abraham\TwitterOAuth\TwitterOAuth;
 use App\Api;
+use App\Deck;
 use App\DeckUser;
 use App\Http\Controllers\Controller;
 use App\Record;
@@ -305,7 +306,7 @@ class TwitterController extends Controller
         }
 
         //Save the record
-        $this->createNewTweetRecord($request, $tweetId, $deck->delete_minutes, $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
+        $this->createNewTweetRecord($deckId, $tweetId, $deck->delete_minutes, $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
         session(['isTweeting' => false]);
         return response()->json(['successRT' => $successRt . '/' . $totalTwitterAccountsApis]);
     }
@@ -471,7 +472,6 @@ class TwitterController extends Controller
             $twitterAccountApi->save();
             $twitterAccount = $twitterAccountApi->twitterAccount;
             if ($twitterAccount) {
-
                 $twitterAccount->status = 'pending';
                 $twitterAccount->save();
             }
@@ -487,13 +487,13 @@ class TwitterController extends Controller
      * @param string $notRtBy
      * @param array $extraInfo
      */
-    private function createNewTweetRecord(Request $request, $tweetId, $deleteMinutes, int $successRt, $totalTwitterAccountsApis, string $notRtBy, array $extraInfo): void
+    private function createNewTweetRecord($deckId, $tweetId, $deleteMinutes, int $successRt, $totalTwitterAccountsApis, string $notRtBy, array $extraInfo): void
     {
 
         Record::create([
             'must_delete_at' => Carbon::now()->addMinutes($deleteMinutes),
             'username' => Auth::user()->username,
-            'deck_id' => $request->input('deckId'),
+            'deck_id' => $deckId,
             'tweet_id' => $tweetId,
             'success_rt' => $successRt . '/' . $totalTwitterAccountsApis,
             'not_rt_by' => $notRtBy,
@@ -505,92 +505,99 @@ class TwitterController extends Controller
 
     public function masterRT(Request $request)
     {
+        session(['isTweeting' => false]);
 
-        $tweetId = $this->getTweetId($request);
+        $request->validate([
+            'deck_ids' => 'array'
+        ]);
 
-        $this->verifyIfTweetHasAlreadyBeenTweeted($tweetId);
-
-        //Define useful variables
-        $deckId = $request->input('deckId');
+        if (session('isTweeting') === true) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Ya tienes un tweet en proceso de RT'
+            ]);
+        }
         $user = auth()->user();
-
         if (!$user) {
             session(['isTweeting' => false]);
             abort(403);
         }
 
-        //Get all RT deck's apis
-        $apis = Api::where('deck_id', $deckId)
-            ->where('type', 'rt')
-            ->get();
+        session(['isTweeting' => true]);
 
-        //Pick a random api
-        $selectedApi = $apis->random();
+        $tweetId = $this->getTweetId($request);
 
+        $this->verifyIfTweetHasAlreadyBeenTweeted($tweetId);
+        $decks = Deck::find($request->input('deck_ids'));
 
-        /* ---------- THE REQUEST VERIFICATION STARTS --------*/
+        $globalCounter = 0;
+        $successGlobalRt = 0;
+        $excludedAccounts = [];
+        foreach ($decks as $currentDeck) {
+            //Define useful variables
+            $deckId = $currentDeck->id;
 
-        /* User permissions verification starts */
+            //Get all RT deck's apis
+            $apis = Api::where('deck_id', $deckId)
+                ->where('type', 'rt')
+                ->get();
 
-        //Verify if the user belongs to the deck
-        $this->verifyIfUserBelongsToTheDeck($user, $deckId);
+            //Pick a random api
+            $selectedApi = $apis->random();
 
-        /* Deck verification starts */
-        //Check if the deck has apis attached
-        $this->verifyIfDeckHasApis($apis);
+            /* ---------- THE REQUEST VERIFICATION STARTS --------*/
 
-        /*TwitterAccount verification starts, first retrieve it */
-        $userTwitterAccount = TwitterAccount::where('deck_id', $deckId)
-            ->where('user_id', $user->id)
-            ->first();
+            /* Deck verification starts */
+            //Check if the deck has apis attached if not, continue to next deck
 
-        // Verify if the user has a twitter account attach to the deck
-        $this->verifyIfUserHasTwitterAccountsInTheDeck($userTwitterAccount);
-
-        //Verify if the user's twitter account has all apis
-        $this->verifyIfUserTwitterAccountStatusIsActive($userTwitterAccount);
-
-        /* Business logic verification starts */
-
-        $deck = $selectedApi->deck;
-
-
-        //Check if user is time restricted in the current deck
-        $this->verifyIfUserIsTimeRestricted($user, $deck);
-
-        /* ---------- THE REQUEST VERIFICATION ENDS --------*/
-
-        //Get all twitter accounts attached to that api
-        $twitterAccountsApis = $selectedApi->twitterAccountApis;
-
-        //Start a counter in order to track the successfully RT
-        $totalTwitterAccountsApis = $twitterAccountsApis->count();
-        $successRt = 0;
-        $notRtBy = '';
-        $extraInfo = [];
-        //iterate over all accounts and make the rt from there
-        foreach ($twitterAccountsApis as $twitterAccountApi) {
-            //Create api connection and make RT post request
-            $apiConnection = new TwitterOAuth($selectedApi->key, $selectedApi->secret, $twitterAccountApi->key, $twitterAccountApi->secret);
-            $response = $apiConnection->post("statuses/retweet", ["id" => $tweetId]);
-
-            if ($this->isError($response) === false) {
-
-                //The request doesn't have errors, let's count it
-                $successRt++;
-            } else {
-                //Store the information from the accounts that didn't RT
-                $this->handleErrorInformation($twitterAccountApi, $notRtBy, $response, $extraInfo);
-
-                // Check if the user has already authorize all apis in order to active it account.
-                $this->checkIfTwitterAccountHasAllApis($userTwitterAccount, $deck->id);
+            if (count($apis) === 0) {
+                continue;
             }
-        }
 
-        //Save the record
-        $this->createNewTweetRecord($request, $tweetId, $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
+            /* ---------- THE REQUEST VERIFICATION ENDS --------*/
+
+            //Get all twitter accounts attached to that api
+            $twitterAccountsApis = $selectedApi->twitterAccountApis;
+
+            //Start a counter in order to track the successfully RT
+            $totalTwitterAccountsApis = $twitterAccountsApis->count();
+            $successRt = 0;
+            $notRtBy = '';
+            $extraInfo = [];
+            //iterate over all accounts and make the rt from there
+            foreach ($twitterAccountsApis as $twitterAccountApi) {
+                $twitterAccount = $twitterAccountApi->twitterAccount;
+                //Verify if there is a twitter account attach to that twitter_account_api.
+                if (isset($twitterAccount)) {
+                    //Check if the twitter account has already tweet this.
+                    if (in_array($twitterAccount->username, $excludedAccounts, true)) {
+                        continue;
+                    }
+                    $excludedAccounts[] = $twitterAccountApi->twitterAccount->username;
+                } else {
+                    continue;
+                }
+
+                $globalCounter++;
+                //Create api connection and make RT post request
+                $apiConnection = new TwitterOAuth($selectedApi->key, $selectedApi->secret, $twitterAccountApi->key, $twitterAccountApi->secret);
+                $response = $apiConnection->post("statuses/retweet", ["id" => $tweetId]);
+
+                if ($this->isError($response) === false) {
+                    //The request doesn't have errors, let's count it
+                    $successRt++;
+                    $successGlobalRt++;
+                } else {
+                    //Store the information from the accounts that didn't RT
+                    $this->handleErrorInformation($twitterAccountApi, $notRtBy, $response, $extraInfo);
+                }
+            }
+
+            //Save the record
+            $this->createNewTweetRecord($deckId, $tweetId, $request->input('delete_minutes'), $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
+        }
         session(['isTweeting' => false]);
-        return response()->json(['successRT' => $successRt . '/' . $totalTwitterAccountsApis]);
+        return redirect()->back()->withSuccess('Se han realizado ' . $successGlobalRt . '/' . $globalCounter . ' Tweets');
     }
 
     public function unrt()
