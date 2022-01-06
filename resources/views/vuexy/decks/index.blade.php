@@ -437,14 +437,13 @@
         }
 
         function isValidTwitterURL(url) {
-
+            console.log(url)
             try {
                 let tweetUrl = new URL(url);
                 if (!tweetUrl.host.includes('twitter')) {
                     return false;
                 }
             } catch (_) {
-
                 return false;
             }
 
