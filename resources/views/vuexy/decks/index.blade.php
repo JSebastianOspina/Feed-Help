@@ -29,7 +29,6 @@
                         </button>
                     </div>
 
-
                     <!-- rt master modal  -->
                     <div class="modal fade" id="RTMasterModal" tabindex="-1" aria-labelledby="addNewCardTitle"
                          aria-hidden="true">
@@ -89,7 +88,6 @@
                         </div>
                     </div>
                     <!--/ rt master modal  -->
-
                 @endif
 
                 <div class="d-flex justify-content-end px-2 mb-3">
@@ -104,7 +102,6 @@
 
                 </div>
 
-
                 <!-- user rt master modal  -->
                 <div class="modal fade" id="UserRTMasterModal" tabindex="-1" aria-labelledby="addNewCardTitle"
                      aria-hidden="true">
@@ -117,45 +114,108 @@
                             <div class="modal-body px-sm-5 mx-50 pb-5">
                                 <h1 class="text-center mb-1" id="addNewCardTitle">RT MASTER</h1>
                                 <p class="text-center">Esta herramienta te permite dar RT en todos los decks a los que
-                                    perteneces <strong>con un solo clic</strong> siempre y cuando estés bien vinculado </p>
+                                    perteneces <strong>con un solo clic</strong> siempre y cuando estés bien vinculado
+                                </p>
                                 <!-- form -->
-                                <form class="row gy-1 gx-2 mt-75" method="POST" action="{{route('userMasterRT')}}">
-                                    @csrf
+                                @csrf
 
-                                    <div class="col-12">
-                                        <label class="form-label" for="tweetURL">URL del Tweet</label>
-                                        <input type="text" class="form-control" name="tweetURL" id="tweetURL"
-                                               required>
+                                <div class="col-12">
+                                    <label class="form-label" for="tweetURL">URL del Tweet</label>
+                                    <input type="text" class="form-control" name="tweetURL" id="tweetURL"
+                                           required>
+
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="deck_ids">Selecciona los decks</label>
+
+                                    <select class="form-select " multiple="multiple"
+                                            id="deck_ids" name="deck_ids[]">
+                                        @foreach($decks as $deck)
+                                            <option value="{{$deck->id}}" selected>{{$deck->name}}</option>
+                                        @endforeach
+
+                                    </select>
+                                </div>
+
+                                <h5 class="mt-2 pt-1">Estado actual</h5>
+                                <div class="d-flex justify-content-between">
+                                    <div class="d-flex">
+                                       <span class="avatar avatar-tag bg-light-info me-1" id="test">
+                                           <i data-feather="clock" class="font-medium-5" id="icon"></i>
+                                       </span>
+                                        <div class="d-flex flex-column">
+                                         <span class="h5 d-block fw-bolder" id="status">
+                                             En espera de tweet
+                                         </span>
+                                            <span id="message">
+                                            Por favor, introduce la URL del tweet para empezar
+                                        </span>
+                                        </div>
 
                                     </div>
-                                    <div class="col-12">
-                                        <label class="form-label" for="deck_ids">Selecciona los decks</label>
-
-                                        <select class="form-select " multiple="multiple"
-                                                id="deck_ids" name="deck_ids[]">
-                                            @foreach($decks as $deck)
-                                                <option value="{{$deck->id}}" selected>{{$deck->name}}</option>
-                                            @endforeach
-
-                                        </select>
-
+                                    <div>
+                                        <div
+                                            class="spinner-grow spinner-grow-sm  text-success me-50"
+                                            style="animation-duration: 1s" id="animation"></div>
                                     </div>
+                                </div>
 
-                                    <div class="col-12 text-center">
-                                        <button type="submit" class="btn btn-primary me-1 mt-1">Hacer RT master
-                                        </button>
-                                        <button type="reset" class="btn btn-outline-secondary mt-1"
-                                                data-bs-dismiss="modal"
-                                                aria-label="Close">
-                                            Cancelar
-                                        </button>
-                                    </div>
-                                </form>
+                                <div class="d-flex justify-content-end mt-2">
+
+                                    <button class="btn btn-primary btn-next" onclick="makeRT()" id="submitButton">
+                                        <span class="align-middle d-sm-inline-block d-none">Hacer RT Master</span>
+                                        <i data-feather="arrow-right" class="align-middle ms-sm-25 ms-0"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <!--/ user rt master modal  -->
+
+
+                <!-- show error modal  -->
+                <div class="modal fade modal-danger" id="errorModal" tabindex="-1" aria-labelledby="addNewCardTitle"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-fullscreen">
+                        <div class="modal-content">
+                            <div class="modal-header bg-transparent">
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body px-sm-5 mx-50 pb-5">
+                                <div class="d-flex flex-column justify-content-center h-100">
+                                    <h1 class="text-center " id="addNewCardTitle">¡Upa, ha ocurrido un error!</h1>
+                                    <h4 class="text-left mt-2">
+                                        Nuestro equipo de monos se encontraba trabajando fuertemente en tu petición ...
+                                    </h4>
+                                    <h4 class="text-left my-1">
+                                        Sin embargo, el mono negro de la derecha detectó un error.
+                                    </h4>
+                                    <div class="w-md-50 text-center">
+                                        <img src="https://i.giphy.com/media/xT5LMrxYauvZhhzL6U/giphy.webp" alt=""
+                                             class="img-fluid">
+                                    </div>
+
+                                    <h4 class="text-left mt-2">
+                                        El mono dijo:
+                                    </h4>
+                                    <h4 id="errorMessage">....</h4>
+                                    <div class="d-flex justify-content-center mt-1">
+                                        <button type="button"
+                                                class="btn btn-danger waves-effect waves-float waves-light"
+                                                data-bs-dismiss="modal">Entendido, gracias
+                                        </button>
+                                    </div>
+                                </div>
+
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <!--/  show error modal  -->
 
                 <div class="table-responsive">
                     @if(count($decks)>0)
@@ -261,7 +321,136 @@
             </div>
         </div>
         <!--/ add new card modal  -->
+
         <!-- TERMINA LA SECCIÓN DE LOS MODALES-->
     @endif
+
+    <script>
+
+        async function makeRTRequest(tweetUrl) {
+
+            let htmlDecksIds = document.getElementById('deck_ids');
+            let options = Array.from(htmlDecksIds.options);
+            let selectedOptions = options.filter(function (currentOption) {
+                return currentOption.selected;
+            })
+            let decksIds = selectedOptions.map(function (currentSelectedOption) {
+                return currentSelectedOption.value;
+            })
+
+            let url = '{{route('userMasterRT')}}';
+            let data = {
+                'tweetURL': tweetUrl,
+                'deck_ids': decksIds,
+                '_token': '{{csrf_token()}}'
+            }
+            let response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            return await response.json();
+        }
+
+        function changeModalStatusToProcessing(tweetURLField, submitButton, status, message) {
+            tweetURLField.setAttribute('readonly', 'true');
+            submitButton.setAttribute('disabled', 'disabled');
+            status.innerText = 'Procesando petición';
+            message.innerText = 'Estamos trabajando en tu Tweet, pronto verás los resultados...';
+        }
+
+        function changeModalStatusToNewRT(tweetURLField, submitButton, status, message) {
+            tweetURLField.removeAttribute('readonly');
+            submitButton.removeAttribute('disabled');
+            status.innerText = 'En espera de tweet';
+            message.innerText = 'Por favor, introduce la URL del tweet para empezar';
+        }
+
+        function changeModalStatusToEnd(tweetURLField, submitButton, status, message, successRT) {
+            status.innerText = 'Retweet finalizado';
+            message.innerText = 'Se obtuvo un resultado de ' + successRT + ' RT';
+            document.getElementById('animation').style.display = 'none';
+            submitButton.style.display = 'none';
+        }
+
+        function resetModal() {
+            let tweetURLField = document.getElementById('tweetId');
+            let status = document.getElementById('status');
+            let message = document.getElementById('message');
+            let submitButton = document.getElementById('submitButton');
+            let resetButton = document.getElementById('resetButton');
+
+            tweetURLField.value = '';
+            submitButton.style.display = 'block';
+            resetButton.style.display = 'none';
+            document.getElementById('animation').style.display = 'block';
+
+            changeModalStatusToNewRT(tweetURLField, submitButton, status, message);
+
+        }
+
+        async function makeRT() {
+
+            //Capture all necessary DOM documents.
+
+            let tweetURLField = document.getElementById('tweetURL');
+            let status = document.getElementById('status');
+            let message = document.getElementById('message');
+            let submitButton = document.getElementById('submitButton');
+            let errorMessage = document.getElementById('errorMessage');
+            let errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+
+            let tweetUrl = tweetURLField.value;
+            if (!isValidTwitterURL(tweetUrl)) {
+                console.log(errorModal)
+                errorMessage.innerText = '"Debes introducir una URL de un tweet válido"';
+                errorModal.show();
+                return;
+            }
+
+            //Change the status to processing
+            changeModalStatusToProcessing(tweetURLField, submitButton, status, message);
+
+            //Realizar la petición
+            try {
+                let responseData = await makeRTRequest(tweetUrl);
+                //Check for errors
+                if (responseData.error === true) {
+                    let errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                    errorMessage.innerText = '"' + responseData.message + '"';
+                    errorModal.show();
+                    changeModalStatusToNewRT(tweetURLField, submitButton, status, message);
+                    return;
+                } else {
+
+                    changeModalStatusToEnd(tweetURLField, submitButton, status, message, responseData.successRT);
+                }
+            } catch (e) {
+                errorMessage.innerText = '"' + 'Ocurrió un error interno en el servidor, la culpa es nuestra. Por favor, comunicate con el owner del deck' + '"';
+                errorModal.show();
+                changeModalStatusToNewRT(tweetURLField, submitButton, status, message);
+            }
+
+
+        }
+
+        function isValidTwitterURL(url) {
+
+            try {
+                let tweetUrl = new URL(url);
+                if (!tweetUrl.host.includes('twitter')) {
+                    return false;
+                }
+            } catch (_) {
+
+                return false;
+            }
+
+            return true;
+        }
+    </script>
+
 
 @endsection

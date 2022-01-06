@@ -238,10 +238,12 @@ class DeckController extends Controller
                 'deck_user.role as role',
                 'u.username as userUsername', 'u.id as userId',
                 't.username as twitterUsername', 't.followers as twitterFollowers', 't.status as twitterStatus', 't.image_url',
+                'donors.id as isDonor'
             ])
             ->where('deck_user.deck_id', $id)
             ->join('users AS u', 'deck_user.user_id', '=', 'u.id')
             ->leftJoin('twitter_accounts AS t', 'deck_user.twitter_account_id', '=', 't.id')
+            ->leftJoin('donors', 'donors.user_id', '=', 'deck_user.user_id')
             ->get()
             ->sortBy('twitterFollowers', SORT_NATURAL, true);
 
@@ -299,7 +301,7 @@ class DeckController extends Controller
         //Check if the user has space for more users
         $deck = Deck::findOrFail($deckId);
 
-        $userLimit = $deck->userLimit ?? 20;
+        $userLimit = $deck->user_limit ?? 20;
 
         if(count($deck->users) >= $userLimit){
             return back()->withError('El deck ha alcanzado el máximo límite de usuarios');

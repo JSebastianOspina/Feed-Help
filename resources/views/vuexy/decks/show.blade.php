@@ -98,6 +98,7 @@
                                         <div>
                                               <span class="font-weight-bold d-block text-nowrap">
                                                   {{$user->userUsername}}
+                                                  {{$user->isDonor ? ' 💎 ' : ''}}
                                                   @if($user->role === 'owner' || $user->role === 'admin')
                                                       <strong>
                                                         Admin
@@ -159,7 +160,7 @@
     @if($hasPermission === true)
 
         <!-- COMIENZA LA SECCIÓN DE LOS MODALES-->
-        <!-- add new card modal  -->
+        <!-- add new USER modal  -->
         <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addNewCardTitle" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
@@ -205,9 +206,9 @@
                 </div>
             </div>
         </div>
-        <!--/ add new card modal  -->
+        <!--/ add new USER modal  -->
     @endif
-    <!-- create app modal -->
+    <!-- Make RT Modal -->
     <div class="modal fade" id="RTModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -272,8 +273,7 @@
             </div>
         </div>
     </div>
-    <!-- / create app modal -->
-
+    <!-- / Make RT Modal -->
 
     <!-- show error modal  -->
     <div class="modal fade modal-danger" id="errorModal" tabindex="-1" aria-labelledby="addNewCardTitle"

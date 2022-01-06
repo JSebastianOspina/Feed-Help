@@ -219,7 +219,6 @@ class TwitterController extends Controller
 
     public function makeRT(Request $request)
     {
-        session(['isTweeting' => false]);
         if (session('isTweeting') === true) {
             return response()->json([
                 'error' => true,
@@ -265,15 +264,16 @@ class TwitterController extends Controller
             ->where('user_id', $user->id)
             ->first();
 
+        $deck = $selectedApi->deck;
+
         // Verify if the user has a twitter account attach to the deck
-        $this->verifyIfUserHasTwitterAccountInTheDeck($userTwitterAccount);
+        $this->verifyIfUserHasTwitterAccountInTheDeck($userTwitterAccount, $deck->name);
 
         //Verify if the user's twitter account has all apis
         $this->verifyIfUserTwitterAccountStatusIsActive($userTwitterAccount);
 
         /* Business logic verification starts */
 
-        $deck = $selectedApi->deck;
 
         //Check if user is time restricted in the current deck
         $this->verifyIfUserIsTimeRestricted($user, $deck);
@@ -378,7 +378,7 @@ class TwitterController extends Controller
         }
     }
 
-    private function verifyIfUserHasTwitterAccountInTheDeck($userTwitterAccount): void
+    private function verifyIfUserHasTwitterAccountInTheDeck($userTwitterAccount, $deckName): void
     {
 
         if ($userTwitterAccount === null) {
@@ -387,7 +387,7 @@ class TwitterController extends Controller
             response()->json(
                 [
                     'error' => true,
-                    'message' => 'No tienes ninguna cuenta vinculada al deck'
+                    'message' => 'No tienes ninguna cuenta vinculada al deck ' . $deckName
                 ]
             )->send();
             die();
@@ -403,7 +403,7 @@ class TwitterController extends Controller
             response()->json(
                 [
                     'error' => true,
-                    'message' => 'Parece que estas intentando dar RT desde una cuenta que no cumple los requisitos. Por favor, revisa tus Apis en el deck '.$userTwitterAccount->deck->name
+                    'message' => 'Parece que estas intentando dar RT desde una cuenta que no cumple los requisitos. Por favor, revisa tus Apis en el deck ' . $userTwitterAccount->deck->name
                 ])->send();
             die();
         }
@@ -611,7 +611,13 @@ class TwitterController extends Controller
         }
 
         if (!($user->isDonor())) {
-            return redirect()->back()->withError('Esta función está disponible unicamente para usuarios que hayan hecho donaciones');
+            session(['isTweeting' => false]);
+
+            return response()->json([
+                'error' => true,
+                'message' => 'Esta función está disponible unicamente para usuarios que hayan hecho donaciones'
+            ]);
+
         }
 
         if (session('isTweeting') === true) {
@@ -649,7 +655,7 @@ class TwitterController extends Controller
                 ->first();
 
             // Verify if the user has a twitter account attach to the deck
-            $this->verifyIfUserHasTwitterAccountInTheDeck($userTwitterAccount);
+            $this->verifyIfUserHasTwitterAccountInTheDeck($userTwitterAccount, $possibleDeck->name);
 
             //Verify if the user's twitter account has all apis
             $this->verifyIfUserTwitterAccountStatusIsActive($userTwitterAccount);
@@ -718,8 +724,11 @@ class TwitterController extends Controller
             //Save the record
             $this->createNewTweetRecord($deckId, $tweetId, 10, $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
         }
+
         session(['isTweeting' => false]);
-        return redirect()->back()->withSuccess('Se han realizado ' . $successGlobalRt . '/' . $globalCounter . ' Tweets');
+        return response()->json([
+            'successRT' => $successGlobalRt . '/' . $globalCounter
+        ]);
     }
 
     public function unrt()
