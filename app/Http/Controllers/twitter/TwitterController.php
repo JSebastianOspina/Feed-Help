@@ -260,8 +260,6 @@ class TwitterController extends Controller
         //Verify if the user belongs to the deck
         $this->verifyIfUserBelongsToTheDeck($user, $deckId);
 
-
-
         /*TwitterAccount verification starts, first retrieve it */
         $userTwitterAccount = TwitterAccount::where('deck_id', $deckId)
             ->where('user_id', $user->id)
@@ -313,6 +311,7 @@ class TwitterController extends Controller
         return response()->json(['successRT' => $successRt . '/' . $totalTwitterAccountsApis]);
     }
 
+
     /**
      * @param Request $request
      * @return array
@@ -354,6 +353,17 @@ class TwitterController extends Controller
 
     }
 
+    private function verifyIfDeckHasApis($apis): void
+    {
+
+        if (count($apis) === 0) {
+            session(['isTweeting' => false]);
+
+            response()->json(['error' => true, 'message' => 'El deck no tiene apis registradas para dar RT'])->send();
+            die();
+        }
+    }
+
     private function verifyIfUserBelongsToTheDeck(?\Illuminate\Contracts\Auth\Authenticatable $user, $deckId): void
     {
 
@@ -364,17 +374,6 @@ class TwitterController extends Controller
                 'error' => true,
                 'message' => 'Estas tratando de dar RT a un deck a el que no perteneces'
             ])->send();
-            die();
-        }
-    }
-
-    private function verifyIfDeckHasApis($apis): void
-    {
-
-        if (count($apis) === 0) {
-            session(['isTweeting' => false]);
-
-            response()->json(['error' => true, 'message' => 'El deck no tiene apis registradas para dar RT'])->send();
             die();
         }
     }
@@ -404,7 +403,7 @@ class TwitterController extends Controller
             response()->json(
                 [
                     'error' => true,
-                    'message' => 'Parece que estas intentando dar RT desde una cuenta que no cumple los requisitos. Por favor, revisa tus Apis'
+                    'message' => 'Parece que estas intentando dar RT desde una cuenta que no cumple los requisitos. Por favor, revisa tus Apis en el deck '.$userTwitterAccount->deck->name
                 ])->send();
             die();
         }
@@ -425,7 +424,7 @@ class TwitterController extends Controller
 
             response()->json([
                 'error' => true,
-                'message' => 'Has excedido el numero máximo de RT. El próximo RT estará disponible en ' . $remainingMinutes . ' minutos'])->send();
+                'message' => 'Has excedido el numero máximo de RT para el deck ' . $deck->name . ' El próximo RT estará disponible en ' . $remainingMinutes . ' minutos'])->send();
             die();
 
         }
@@ -507,7 +506,7 @@ class TwitterController extends Controller
 
     public function masterRT(Request $request)
     {
-        if(!(auth()->user()->isOwner())) {
+        if (!(auth()->user()->isOwner())) {
             abort(403, 'Eso tiliiin ');
         }
         session(['isTweeting' => false]);
@@ -534,6 +533,129 @@ class TwitterController extends Controller
 
         $this->verifyIfTweetHasAlreadyBeenTweeted($tweetId);
         $decks = Deck::find($request->input('deck_ids'));
+
+        $globalCounter = 0;
+        $successGlobalRt = 0;
+        $excludedAccounts = [];
+        foreach ($decks as $currentDeck) {
+            //Define useful variables
+            $deckId = $currentDeck->id;
+
+            //Get all RT deck's apis
+            $apis = Api::where('deck_id', $deckId)
+                ->where('type', 'rt')
+                ->get();
+
+            /* Deck verification starts */
+            //Check if the deck has apis attached if not, continue to next deck
+
+            if (count($apis) === 0) {
+                continue;
+            }
+
+            //Pick a random api
+            $selectedApi = $apis->random();
+
+            //Get all twitter accounts attached to that api
+            $twitterAccountsApis = $selectedApi->twitterAccountApis;
+
+            //Start a counter in order to track the successfully RT
+            $totalTwitterAccountsApis = $twitterAccountsApis->count();
+            $successRt = 0;
+            $notRtBy = '';
+            $extraInfo = [];
+            //iterate over all accounts and make the rt from there
+            foreach ($twitterAccountsApis as $twitterAccountApi) {
+                $twitterAccount = $twitterAccountApi->twitterAccount;
+                //Verify if there is a twitter account attach to that twitter_account_api.
+                if (isset($twitterAccount)) {
+                    //Check if the twitter account has already tweet this.
+                    if (in_array($twitterAccount->username, $excludedAccounts, true)) {
+                        continue;
+                    }
+                    $excludedAccounts[] = $twitterAccountApi->twitterAccount->username;
+                } else {
+                    continue;
+                }
+
+                $globalCounter++;
+                //Create api connection and make RT post request
+                $apiConnection = new TwitterOAuth($selectedApi->key, $selectedApi->secret, $twitterAccountApi->key, $twitterAccountApi->secret);
+                $response = $apiConnection->post("statuses/retweet", ["id" => $tweetId]);
+
+                if ($this->isError($response) === false) {
+                    //The request doesn't have errors, let's count it
+                    $successRt++;
+                    $successGlobalRt++;
+                } else {
+                    //Store the information from the accounts that didn't RT
+                    $this->handleErrorInformation($twitterAccountApi, $notRtBy, $response, $extraInfo);
+                }
+            }
+
+            //Save the record
+            $this->createNewTweetRecord($deckId, $tweetId, $request->input('delete_minutes'), $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
+        }
+        session(['isTweeting' => false]);
+        return redirect()->back()->withSuccess('Se han realizado ' . $successGlobalRt . '/' . $globalCounter . ' Tweets');
+    }
+
+    public function userMasterRT(Request $request)
+    {
+        session(['isTweeting' => false]);
+
+        //Verify that the user is logged.
+        $user = auth()->user();
+        if (!$user) {
+            session(['isTweeting' => false]);
+            abort(403);
+        }
+
+        if (!($user->isDonor())) {
+            abort(403, 'Esta función está disponible unicamente para usuarios que hayan hecho donaciones');
+        }
+
+        if (session('isTweeting') === true) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Ya tienes un tweet en proceso de RT'
+            ]);
+        }
+
+        //Verify that the user provide an array of index
+        $request->validate([
+            'deck_ids' => 'array'
+        ]);
+        //Start process
+        session(['isTweeting' => true]);
+
+        $tweetId = $this->getTweetId($request);
+        //Verify if the tweet has not been tweeted before.
+        $this->verifyIfTweetHasAlreadyBeenTweeted($tweetId);
+
+        $decks = Deck::find($request->input('deck_ids'));
+        //We will verify this for all the decks
+        foreach ($decks as $possibleDeck) {
+
+            //First, verify that the user belongs to the current deck
+            $this->verifyIfUserBelongsToTheDeck($user, $possibleDeck->id);
+
+            //Now check if the user it's time restricted
+            $this->verifyIfUserIsTimeRestricted($user, $possibleDeck);
+
+            /*TwitterAccount verification starts, first retrieve it */
+            $userTwitterAccount = TwitterAccount::where('deck_id', $possibleDeck->id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            // Verify if the user has a twitter account attach to the deck
+            $this->verifyIfUserHasTwitterAccountInTheDeck($userTwitterAccount);
+
+            //Verify if the user's twitter account has all apis
+            $this->verifyIfUserTwitterAccountStatusIsActive($userTwitterAccount);
+
+        }
+
 
         $globalCounter = 0;
         $successGlobalRt = 0;

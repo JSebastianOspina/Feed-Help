@@ -283,6 +283,16 @@ class DeckController extends Controller
         if (!$this->hasAdminPermissions($deckId)) {
             abort(403);
         }
+
+        //Check if the user has space for more users
+        $deck = Deck::findOrFail($deckId);
+
+        $userLimit = $deck->userLimit ?? 20;
+
+        if(count($deck->users) >= $userLimit){
+            return back()->withError('El deck ha alcanzado el máximo límite de usuarios');
+        }
+
         //Check if is asking for a valid role
         Validator::make($request->all(), [
             'user_username' => 'required|string',

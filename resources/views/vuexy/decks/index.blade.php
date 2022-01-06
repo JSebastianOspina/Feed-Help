@@ -65,7 +65,6 @@
 
                                             </select>
 
-
                                         </div>
 
                                         <div class="col-12">
@@ -74,7 +73,6 @@
                                                    id="delete_minutes"
                                                    min="10" required value="10">
                                         </div>
-
 
                                         <div class="col-12 text-center">
                                             <button type="submit" class="btn btn-primary me-1 mt-1">Hacer RT master

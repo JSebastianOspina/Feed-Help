@@ -100,6 +100,11 @@ class User extends Authenticatable
         return $this->role === 2;
     }
 
+    public function isDonor(): bool
+    {
+        return $this->role === 3;
+    }
+
     public function decks()
     {
         return $this->belongsToMany(Deck::class);
@@ -118,7 +123,6 @@ class User extends Authenticatable
     public function belongsToDeck($deckId): bool
     {
         return $this->getDeckInfo($deckId)['hasPermission'] === true;
-
 
     }
 
