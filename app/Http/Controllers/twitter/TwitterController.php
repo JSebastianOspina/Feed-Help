@@ -612,7 +612,7 @@ class TwitterController extends Controller
         }
 
         if (!($user->isDonor())) {
-            abort(403, 'Esta función está disponible unicamente para usuarios que hayan hecho donaciones');
+            return redirect()->back()->withError('Esta función está disponible unicamente para usuarios que hayan hecho donaciones');
         }
 
         if (session('isTweeting') === true) {
@@ -634,6 +634,7 @@ class TwitterController extends Controller
         $this->verifyIfTweetHasAlreadyBeenTweeted($tweetId);
 
         $decks = Deck::find($request->input('deck_ids'));
+
         //We will verify this for all the decks
         foreach ($decks as $possibleDeck) {
 
@@ -655,7 +656,6 @@ class TwitterController extends Controller
             $this->verifyIfUserTwitterAccountStatusIsActive($userTwitterAccount);
 
         }
-
 
         $globalCounter = 0;
         $successGlobalRt = 0;
@@ -717,7 +717,7 @@ class TwitterController extends Controller
             }
 
             //Save the record
-            $this->createNewTweetRecord($deckId, $tweetId, $request->input('delete_minutes'), $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
+            $this->createNewTweetRecord($deckId, $tweetId, 10, $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
         }
         session(['isTweeting' => false]);
         return redirect()->back()->withSuccess('Se han realizado ' . $successGlobalRt . '/' . $globalCounter . ' Tweets');

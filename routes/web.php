@@ -57,6 +57,7 @@ Route::get('/deleteTweets', 'twitter\TwitterController@unrt')->middleware('feedD
 
 /* Master RT */
 Route::post('/masterRT', 'twitter\TwitterController@masterRT')->name('masterRT')->middleware('feedDeck', 'isOwner');
+Route::post('/userMasterRT', 'twitter\TwitterController@userMasterRT')->name('userMasterRT')->middleware('feedDeck');
 
 /* Recibir callback de twitter Tweets */
 Route::get('/callback', 'twitter\TwitterController@callback')->middleware('feedDeck');

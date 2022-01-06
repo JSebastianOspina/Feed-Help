@@ -9,20 +9,23 @@
     <!-- Primary Meta Tags -->
     <title>Feed-Deck | Primer sistema con Inteligencia Artifical</title>
     <meta name="title" content="Feed-Deck | Primer sistema con Inteligencia Artifical">
-    <meta name="description" content="FeedDeck, es el primer sistema con Inteligencia Artifical desarrollado para la gestion de cuentas de twitter| Actualizando constantemente para mejorar. ">
+    <meta name="description"
+          content="FeedDeck, es el primer sistema con Inteligencia Artifical desarrollado para la gestion de cuentas de twitter| Actualizando constantemente para mejorar. ">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://www.feed-help.de/login">
     <meta property="og:title" content="Feed-Deck | Primer sistema con Inteligencia Artificial">
-    <meta property="og:description" content="FeedDeck, es el primer sistema con Inteligencia Artificial desarrollado para la gestion de cuentas | Actualizando constantemente para mejorar. ">
+    <meta property="og:description"
+          content="FeedDeck, es el primer sistema con Inteligencia Artificial desarrollado para la gestion de cuentas | Actualizando constantemente para mejorar. ">
     <meta property="og:image" content="https://www.feed-help.de/image.jpg">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://www.feed-help.de/login">
     <meta property="twitter:title" content="Feed-Deck | Primer sistema con Inteligencia Artificial">
-    <meta property="twitter:description" content="FeedDeck, es el primer sistema con Inteligencia Artifical desarrollado para la gestion de cuentas | Actualizando constantemente para mejorar. ">
+    <meta property="twitter:description"
+          content="FeedDeck, es el primer sistema con Inteligencia Artifical desarrollado para la gestion de cuentas | Actualizando constantemente para mejorar. ">
     <meta property="twitter:image" content="https://www.feed-help.de/image.jpg">
     <link rel="apple-touch-icon" href="{{asset('2.0/app-assets/images/ico/apple-icon-120.png')}}">
     <link rel="shortcut icon" type="image/x-icon" href="{{asset('2.0/app-assets/images/ico/favicon.ico')}}">
@@ -33,7 +36,11 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-174907300-1"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+
         gtag('js', new Date());
 
         gtag('config', 'UA-174907300-1');
@@ -376,6 +383,7 @@
         <script>
             toastr['error']('{{$error}}', 'Algo salió mal', {
                 closeButton: true,
+                timeOut: 0,
                 tapToDismiss: false,
             });
         </script>
@@ -386,6 +394,7 @@
     <script>
         toastr['success']('{!! session()->get('success') !!}', '¡Exito!', {
             closeButton: true,
+            timeOut: 0,
             tapToDismiss: false,
         });
     </script>
@@ -394,6 +403,7 @@
     <script>
         toastr['error']('{!! session()->get('error') !!}', 'Algo salió mal', {
             closeButton: true,
+            timeOut: 0,
             tapToDismiss: false,
         });
     </script>

@@ -124,6 +124,13 @@ class DeckController extends Controller
 
         $api = Api::create($request->all());
 
+        //Desactivar todas las cuentas del deck
+        $twitterAccounts = $api->deck->twitterAccounts;
+        foreach ($twitterAccounts as $twitterAccount){
+            $twitterAccount->status = 'pending';
+            $twitterAccount->save();
+        }
+
         return redirect()->route('decks.edit', ['deck' => $deckId])
             ->withSuccess('API creada exitosamente');
     }

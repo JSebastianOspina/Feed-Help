@@ -210,8 +210,7 @@
                                                             <input id="key" name="key"
                                                                    class="form-control" type="text"
                                                                    placeholder="API key de app Twitter"
-                                                                   value="{{ $api->key}}"
-
+                                                                   value="{{ $api->key}}" readonly
                                                             />
                                                         </div>
                                                     </div>
@@ -221,7 +220,7 @@
                                                             <input id="secret" name="secret"
                                                                    class="form-control" type="text"
                                                                    placeholder="API secret de app Twitter"
-                                                                   value="{{ $api->secret}}"
+                                                                   value="{{ $api->secret}}" readonly
                                                             />
                                                         </div>
                                                     </div>

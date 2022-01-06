@@ -102,7 +102,8 @@ class User extends Authenticatable
 
     public function isDonor(): bool
     {
-        return $this->role === 3;
+        $donor = DB::table('donors')->where('user_id', $this->id)->first();
+        return $donor !== null;
     }
 
     public function decks()
