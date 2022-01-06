@@ -45,6 +45,7 @@ class Deck extends Model
     protected $table = 'decks';
     protected $guarded = [];
 
+
     public function users()
     {
         return $this->belongsToMany(User::class);

@@ -100,6 +100,17 @@ class User extends Authenticatable
         return $this->role === 2;
     }
 
+    public function canUseDeck(Deck $deck): bool{
+        $deckInfo = $this->getDeckInfo($deck->id);
+        $role = $deckInfo['role'];
+        if($this->isOwner() || $role !== 'user') {
+            return true;
+        }
+        if($deck->enabled === 0){
+            return false;
+        }
+        return true;
+    }
     public function isDonor(): bool
     {
         $donor = DB::table('donors')->where('user_id', $this->id)->first();

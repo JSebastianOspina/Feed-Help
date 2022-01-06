@@ -76,20 +76,20 @@
                                         </li>
 
                                     </ul>
-                                    @if($canEditDeck)
-                                        <div class="d-flex justify-content-center pt-2">
-                                            <button class="btn btn-primary me-1" data-bs-target="#editDeckModal"
-                                                    data-bs-toggle="modal">
-                                                Editar deck
-                                            </button>
 
+                                    <div class="d-flex justify-content-center pt-2">
+                                        <button class="btn btn-primary me-1" data-bs-target="#editDeckModal"
+                                                data-bs-toggle="modal">
+                                            Editar deck
+                                        </button>
+                                        @if($canEditDeck)
                                             <button class="btn btn-danger me-1" data-bs-target="#deleteDeckModal"
                                                     data-bs-toggle="modal">
                                                 Eliminar Deck
                                             </button>
+                                        @endif
 
-                                        </div>
-                                    @endif
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -266,107 +266,107 @@
                     <!--/ User Content -->
                 </div>
             </section>
-        @if($canEditDeck)
+
             <!-- Edit Deck Modal -->
-                <div class="modal fade" id="editDeckModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-lg modal-dialog-centered modal-edit-user">
-                        <div class="modal-content">
-                            <div class="modal-header bg-transparent">
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
+            <div class="modal fade" id="editDeckModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered modal-edit-user">
+                    <div class="modal-content">
+                        <div class="modal-header bg-transparent">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body pb-5 px-sm-5 pt-50">
+                            <div class="text-center mb-2">
+                                <h1 class="mb-1">Editar Deck</h1>
+                                <p>Cambia la configuración actual del Deck</p>
                             </div>
-                            <div class="modal-body pb-5 px-sm-5 pt-50">
-                                <div class="text-center mb-2">
-                                    <h1 class="mb-1">Editar Deck</h1>
-                                    <p>Cambia la configuración actual del Deck</p>
+                            <form class="row gy-1 pt-75" action="{{route('decks.update',['deck'=>$deck->id])}}"
+                                  method="POST">
+                                @csrf
+                                @method('PATCH')
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label" for="rt_minutes">Minutos para RT:</label>
+                                    <input type="number" class="form-control" name="rt_minutes" id="rt_minutes"
+                                           value="{{$deck->rt_minutes}}"
+                                           min="60" required {{$canEditDeck === false ? 'readonly': ''}}
+                                    >
                                 </div>
-                                <form class="row gy-1 pt-75" action="{{route('decks.update',['deck'=>$deck->id])}}"
-                                      method="POST">
-                                    @csrf
-                                    @method('PATCH')
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label" for="rt_minutes">Minutos para RT:</label>
-                                        <input type="number" class="form-control" name="rt_minutes" id="rt_minutes"
-                                               value="{{$deck->rt_minutes}}"
-                                               min="60" required
-                                        >
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label" for="delete_minutes">Minutos para borrado</label>
-                                        <input type="number" class="form-control" name="delete_minutes"
-                                               id="delete_minutes"
-                                               value="{{$deck->delete_minutes}}" required
-                                               step="1" min="10">
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label" for="whatsapp_group_url">URL grupo Whatsapp</label>
-                                        <input type="text" id="whatsapp_group_url" name="whatsapp_group_url"
-                                               class="form-control modal-edit-tax-id"
-                                               placeholder="Formato: https://chat.whatsapp.com/XXXX"
-                                               value="{{$deck->whatsapp_group_url}}"
-                                        />
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label" for="telegram_username">Usuario de telegram (recepción
-                                            de
-                                            notificaciones)</label>
-                                        <input type="text" id="telegram_username" name="telegram_username"
-                                               class="form-control modal-edit-tax-id"
-                                               placeholder="IxraelGomez"
-                                               value="{{$deck->telegram_username}}"
-                                        />
-                                    </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label" for="delete_minutes">Minutos para borrado</label>
+                                    <input type="number" class="form-control" name="delete_minutes"
+                                           id="delete_minutes"
+                                           value="{{$deck->delete_minutes}}" required
+                                           step="1" min="10" {{$canEditDeck === false ? 'readonly': ''}}>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label" for="whatsapp_group_url">URL grupo Whatsapp</label>
+                                    <input type="text" id="whatsapp_group_url" name="whatsapp_group_url"
+                                           class="form-control modal-edit-tax-id"
+                                           placeholder="Formato: https://chat.whatsapp.com/XXXX"
+                                           value="{{$deck->whatsapp_group_url}}"
+                                    />
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label" for="telegram_username">Usuario de telegram (recepción
+                                        de
+                                        notificaciones)</label>
+                                    <input type="text" id="telegram_username" name="telegram_username"
+                                           class="form-control modal-edit-tax-id"
+                                           placeholder="IxraelGomez"
+                                           value="{{$deck->telegram_username}}"
+                                    />
+                                </div>
 
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label" for="min_followers">Cantidad mínima de seguidores (en
-                                            K)</label>
-                                        <input type="number" class="form-control" name="min_followers"
-                                               id="min_followers"
-                                               placeholder="30 para 30k seguidores"
-                                               value="{{$deck->min_followers}}"
-                                               min="0">
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label" for="enabled">Estado del Deck</label>
-                                        <select id="enabled" name="enabled" class="form-select">
-                                            <option value="1" {{$deck->enabled === 1? 'selected': ''}}>Activo</option>
-                                            <option value="0" {{$deck->enabled === 0? 'selected': ''}}>Mantenimiento
-                                            </option>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label" for="min_followers">Cantidad mínima de seguidores (en
+                                        K)</label>
+                                    <input type="number" class="form-control" name="min_followers"
+                                           id="min_followers"
+                                           placeholder="30 para 30k seguidores"
+                                           value="{{$deck->min_followers}}"
+                                           min="0" {{$canEditDeck === false ? 'readonly': ''}}>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label" for="enabled">Estado del Deck</label>
+                                    <select id="enabled" name="enabled" class="form-select">
+                                        <option value="1" {{$deck->enabled === 1? 'selected': ''}}>Activo</option>
+                                        <option value="0" {{$deck->enabled === 0? 'selected': ''}}>Mantenimiento
+                                        </option>
 
-                                        </select>
-                                    </div>
+                                    </select>
+                                </div>
 
 
-                                    <div class="col-12">
-                                        <div class="d-flex align-items-center mt-1">
-                                            <div class="form-check form-switch form-check-primary">
-                                                <input type="checkbox" class="form-check-input" id="customSwitch10"
-                                                       {{$deck->isPublic ? 'checked': ''}} name="isPublic"/>
-                                                <label class="form-check-label" for="customSwitch10">
-                                                    <span class="switch-icon-left"><i data-feather="check"></i></span>
-                                                    <span class="switch-icon-right"><i data-feather="x"></i></span>
-                                                </label>
-                                            </div>
-                                            <label class="form-check-label fw-bolder" for="customSwitch10">Permitir
-                                                encontrar
-                                                en la busqueda de Decks</label>
+                                <div class="col-12">
+                                    <div class="d-flex align-items-center mt-1">
+                                        <div class="form-check form-switch form-check-primary">
+                                            <input type="checkbox" class="form-check-input" id="customSwitch10"
+                                                   {{$deck->isPublic ? 'checked': ''}} name="isPublic"/>
+                                            <label class="form-check-label" for="customSwitch10">
+                                                <span class="switch-icon-left"><i data-feather="check"></i></span>
+                                                <span class="switch-icon-right"><i data-feather="x"></i></span>
+                                            </label>
                                         </div>
+                                        <label class="form-check-label fw-bolder" for="customSwitch10">Permitir
+                                            encontrar
+                                            en la busqueda de Decks</label>
                                     </div>
-                                    <div class="col-12 text-center mt-2 pt-50">
-                                        <button type="submit" class="btn btn-primary me-1">Guardar cambios</button>
-                                        <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="modal"
-                                                aria-label="Close">
-                                            Cancelar
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
+                                </div>
+                                <div class="col-12 text-center mt-2 pt-50">
+                                    <button type="submit" class="btn btn-primary me-1">Guardar cambios</button>
+                                    <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="modal"
+                                            aria-label="Close">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
-                <!--/ Edit Deck Modal -->
-
-                <!-- Edit Deck Modal -->
+            </div>
+            <!--/ Edit Deck Modal -->
+        @if($canEditDeck)
+            <!-- Edit Deck Modal -->
                 <div class="modal fade" id="deleteDeckModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-lg modal-dialog-centered modal-edit-user">
                         <div class="modal-content">

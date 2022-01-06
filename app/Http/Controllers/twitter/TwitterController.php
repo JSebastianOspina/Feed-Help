@@ -602,7 +602,6 @@ class TwitterController extends Controller
 
     public function userMasterRT(Request $request)
     {
-        session(['isTweeting' => false]);
 
         //Verify that the user is logged.
         $user = auth()->user();

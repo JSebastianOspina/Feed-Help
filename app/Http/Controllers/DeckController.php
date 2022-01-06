@@ -217,6 +217,10 @@ class DeckController extends Controller
             return redirect()->route('decks.index')->withError('¿Estás bien? parece que estas intentando acceder a un Deck que no existe 🤡');
         }
 
+        if(auth()->user()->canUseDeck($deck) === false ){
+            return redirect()->route('decks.index')->withError('Estas intentando acceder a un Deck que se encuentra inactivo. Por favor intenta mas tarde');
+        }
+
         //Lets check if the user belongs to this deck.
 
         $user = auth()->user();
@@ -258,10 +262,11 @@ class DeckController extends Controller
     {
         $requestedData = $request->all();
 
-        if (!$this->hasOwnerPermissions($deckId)) {
+        if (!$this->hasAdminPermissions($deckId)) {
             return redirect()->route('decks.index')
                 ->withError('No puedes editar un deck del cual no eres administrador');
         }
+
         //Validate the request
         $validatedData = $request->validate([
             'whatsapp_group_url' => 'nullable|string',

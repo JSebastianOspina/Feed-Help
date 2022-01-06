@@ -44,7 +44,7 @@
                                     <p class="text-center">Privilegio para Owner </p>
 
                                     <!-- form -->
-                                    <form class="row gy-1 gx-2 mt-75" method="POST" action="{{route('userMasterRT')}}">
+                                    <form class="row gy-1 gx-2 mt-75" method="POST" action="{{route('masterRT')}}">
                                         @csrf
 
                                         <div class="col-12">
