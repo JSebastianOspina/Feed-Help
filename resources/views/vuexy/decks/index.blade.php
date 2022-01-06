@@ -47,8 +47,8 @@
                                         @csrf
 
                                         <div class="col-12">
-                                            <label class="form-label" for="tweetURL">URL del Tweet</label>
-                                            <input type="text" class="form-control" name="tweetURL" id="tweetURL"
+                                            <label class="form-label" for="tweetURLOwner">URL del Tweet</label>
+                                            <input type="text" class="form-control" name="tweetURL" id="tweetURLOwner"
                                                    required>
 
                                         </div>
