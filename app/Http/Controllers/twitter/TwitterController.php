@@ -722,7 +722,7 @@ class TwitterController extends Controller
             }
 
             //Save the record
-            $this->createNewTweetRecord($deckId, $tweetId, 10, $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
+            $this->createNewTweetRecord($deckId, $tweetId, 13, $successRt, $totalTwitterAccountsApis, $notRtBy, $extraInfo);
         }
 
         session(['isTweeting' => false]);
