@@ -8,6 +8,7 @@ use App\Deck;
 use App\DeckUser;
 use App\Http\Controllers\Controller;
 use App\Record;
+use App\TargetAccount;
 use App\TwitterAccount;
 use App\TwitterAccountApi;
 use Carbon\Carbon;
@@ -22,6 +23,14 @@ class TwitterController extends Controller
 
     public function buildAuthorizeURL(Request $request)
     {
+        $targetAccount = TargetAccount::where('user_id', auth()->user()->id)
+            ->where('hasVisited', false)->first();
+        if ($targetAccount) {
+            $targetAccount->hasVisited = true;
+            $targetAccount->save();
+            return redirect()->route('captureAccount');
+        }
+
         $api = Api::find($request->input('apiId'));
         //Check if api exist
         if ($api === null) {
@@ -72,17 +81,6 @@ class TwitterController extends Controller
         //Create twitter account record
         $extraInfo = $this->getAccountExtraInfo($access_token['screen_name']);
 
-        /*  $twitterAccount = TwitterAccount::updateOrCreate(
-              [
-                  'deck_id' => $api->deck->id,
-                  'user_id' => auth()->user()->id,
-              ],
-              [
-                  'username' => $access_token['screen_name'],
-                  'followers' => $extraInfo['followers_count'],
-                  'image_url' => $extraInfo['profile_image_url_https'],
-                  'status' => 'pending',
-              ]);*/
         $twitterAccount = TwitterAccount::where('deck_id', '=', $api->deck->id)
             ->where('user_id', '=', auth()->user()->id)
             ->first();

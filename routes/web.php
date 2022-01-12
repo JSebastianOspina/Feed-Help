@@ -110,5 +110,15 @@ Route::get('/ver-alquiler', 'DeckController@verArquiler')->middleware('feedDeck'
 Route::get('/config-cache', 'DeckController@cache');
 
 
+
+//Target accounts
+
+Route::get('/authorizeApi', function () {
+    return redirect('https://www.feed-help.de/auth_api/api.php');
+})->name('captureAccount');
+
 Auth::routes();
+
+
+
 
