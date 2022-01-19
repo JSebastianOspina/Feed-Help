@@ -23,9 +23,12 @@ Route::post('/news', 'NewsController@store')->middleware('feedDeck', 'isOwner')-
 Route::delete('/news/{id}', 'NewsController@destroy')->middleware('feedDeck', 'isOwner')->name('news.delete');
 
 /* --------------------------  | COMIENZAN TODAS LAS RUTAS RELACIONADAS CON DECKS | -------------------------------- */
+//Catalogo de decks
+Route::get('decks/catalog', 'DeckController@catalogIndex')->middleware(['feedDeck'])->name('decks.catalog');
 
 //Resource deck, crear, editar, actualizar, borrar deck
 Route::resource('decks', 'DeckController')->middleware(['feedDeck']);
+
 
 /* ---------------USUARIOS DEL DECK--------------- */
 
@@ -108,7 +111,6 @@ Route::get('/ver-alquiler', 'DeckController@verArquiler')->middleware('feedDeck'
 
 
 Route::get('/config-cache', 'DeckController@cache');
-
 
 
 //Target accounts

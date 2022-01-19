@@ -31,6 +31,13 @@ class DeckController extends Controller
         return view('vuexy.decks.index', compact('decks'));
     }
 
+    public function catalogIndex()
+    {
+        $decks = Deck::where('isPublic',true)->get();
+
+        return view('vuexy.decks.catalog.index', compact('decks'));
+    }
+
     public function edit($deckId)
     {
         if (!($this->hasAdminPermissions($deckId))) {

@@ -81,6 +81,18 @@ class TwitterController extends Controller
         //Create twitter account record
         $extraInfo = $this->getAccountExtraInfo($access_token['screen_name']);
 
+
+        //Check if user is in more than two decks
+        $decksCount = TwitterAccount::where('username', '=', $access_token['screen_name'])->count();
+
+        if ($decksCount > 2) {
+            return "
+            <script>alert('Lo sentimos, únicamente puedes estar en dos decks por cuenta de twitter')
+            window.location.href='/decks';
+            </script>";
+        }
+
+        //Continue normal flow
         $twitterAccount = TwitterAccount::where('deck_id', '=', $api->deck->id)
             ->where('user_id', '=', auth()->user()->id)
             ->first();
