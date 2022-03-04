@@ -85,11 +85,11 @@ Route::get('decks/{deckId}/records/{recordId}', 'DeckController@showRecord')->mi
 Route::post('/system', 'SystemController@store')->middleware('feedDeck', 'isOwner')->name('system.store');
 
 
-Route::get('/checkShadowBan/{twitterAccount}', function ($twitterAccount) {
+/*Route::get('/checkShadowBan/{twitterAccount}', function ($twitterAccount) {
     $scraper = new \App\utils\ScrapingTool('https://api.shadowban.io/api/v1/twitter/@' . $twitterAccount);
     $response = $scraper->makeRequest();
     print_r(json_decode($response)->content);
-})->middleware('feedDeck')->name('checkShadowBan');
+})->middleware('feedDeck')->name('checkShadowBan');*/
 
 Route::view('mantenimiento-view', 'mantenimiento')->name('mantenimiento-view');
 
