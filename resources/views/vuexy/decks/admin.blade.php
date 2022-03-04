@@ -307,12 +307,10 @@
                                     />
                                 </div>
                                 <div class="col-12 col-md-6">
-                                    <label class="form-label" for="telegram_username">Usuario de telegram (recepción
-                                        de
-                                        notificaciones)</label>
+                                    <label class="form-label" for="telegram_username">Numero de Whatsapp</label>
                                     <input type="text" id="telegram_username" name="telegram_username"
                                            class="form-control modal-edit-tax-id"
-                                           placeholder="IxraelGomez"
+                                           placeholder="5212227603047"
                                            value="{{$deck->telegram_username}}"
                                     />
                                 </div>

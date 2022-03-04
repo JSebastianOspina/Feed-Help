@@ -1,7 +1,5 @@
 <?php
 
-use App\Record;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,13 +20,24 @@ Route::get('/', 'NewsController@index')->middleware('feedDeck')->name('news.inde
 Route::post('/news', 'NewsController@store')->middleware('feedDeck', 'isOwner')->name('news.store');
 Route::delete('/news/{id}', 'NewsController@destroy')->middleware('feedDeck', 'isOwner')->name('news.delete');
 
-/* --------------------------  | COMIENZAN TODAS LAS RUTAS RELACIONADAS CON DECKS | -------------------------------- */
+/* --------------------------  | COMIENZAN TODAS LAS RUTAS RELACIONADAS CON CATALOGOS | -------------------------------- */
+
+//CatalogAPi
+//Owner, configurar el catalog API
+Route::post('catalogApi', 'CatalogApiController@store')->middleware(['feedDeck'])->name('catalogApi.store');
+
 //Catalogo de decks
 Route::get('decks/catalog', 'DeckController@catalogIndex')->middleware(['feedDeck'])->name('decks.catalog');
 
+//Generar URL de auth
+Route::post('decks/catalog/authorize', 'DeckJoinRequestController@buildAuthorizeURL')->middleware(['feedDeck'])->name('decks.catalog.authorize');
+//Store deck join request
+Route::get('callback/catalog', 'DeckJoinRequestController@callback')->middleware(['feedDeck'])->name('decks.catalog.callback');
+Route::delete('deckJoinRequests/{deckJoinRequest}', 'DeckJoinRequestController@destroy')->middleware(['feedDeck'])->name('deckJoinRequests.destroy');
+/* --------------------------  | COMIENZAN TODAS LAS RUTAS RELACIONADAS CON DECKS | -------------------------------- */
+
 //Resource deck, crear, editar, actualizar, borrar deck
 Route::resource('decks', 'DeckController')->middleware(['feedDeck']);
-
 
 /* ---------------USUARIOS DEL DECK--------------- */
 
@@ -75,26 +84,6 @@ Route::get('decks/{deckId}/records/{recordId}', 'DeckController@showRecord')->mi
 
 Route::post('/system', 'SystemController@store')->middleware('feedDeck', 'isOwner')->name('system.store');
 
-Route::get('/theme', function () {
-    return env('TWITTER_CALLBACK_URL');
-    dd(Carbon::now()->subMinutes(60));
-
-    $lastRecord = Record::where('username', 'crazysebas')
-        ->where('deck_id', 1)
-        ->where('created_at', '>=', Carbon::now()->subHour())
-        ->orderBy('created_at', 'asc')
-        ->get();
-    $nextHour = Carbon::parse($lastRecord[0]->created_at)->addHour();
-    $remainingMinutes = $nextHour->diffInMinutes(Carbon::now());
-    dd($remainingMinutes);
-    dd($lastRecord);
-    dd(Carbon::now()->subHour());
-    dd(Carbon::now()->diffInHours($lastRecord->created_at));
-    $now = Carbon::now()->toDateTimeString();
-    return $now;
-
-    return view('vuexy.decks.apis');
-});
 
 Route::get('/checkShadowBan/{twitterAccount}', function ($twitterAccount) {
     $scraper = new \App\utils\ScrapingTool('https://api.shadowban.io/api/v1/twitter/@' . $twitterAccount);
@@ -103,12 +92,6 @@ Route::get('/checkShadowBan/{twitterAccount}', function ($twitterAccount) {
 })->middleware('feedDeck')->name('checkShadowBan');
 
 Route::view('mantenimiento-view', 'mantenimiento')->name('mantenimiento-view');
-
-
-Route::get('/alquiler/{username}', 'DeckController@consentido')->middleware('feedDeck');
-Route::get('/alquiler-borrar/{username}', 'DeckController@consentidoBorrar')->middleware('feedDeck');
-Route::get('/ver-alquiler', 'DeckController@verArquiler')->middleware('feedDeck');
-
 
 Route::get('/config-cache', 'DeckController@cache');
 

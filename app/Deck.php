@@ -51,6 +51,12 @@ class Deck extends Model
         return $this->belongsToMany(User::class);
     }
 
+    public function deckJoinRequests()
+    {
+        return $this->hasMany(DeckJoinRequest::class);
+
+    }
+
 
     public function twitterAccounts()
     {

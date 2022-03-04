@@ -33,7 +33,7 @@ class DeckController extends Controller
 
     public function catalogIndex()
     {
-        $decks = Deck::where('isPublic',true)->get();
+        $decks = Deck::where('isPublic', true)->get();
 
         return view('vuexy.decks.catalog.index', compact('decks'));
     }
@@ -133,7 +133,7 @@ class DeckController extends Controller
 
         //Desactivar todas las cuentas del deck
         $twitterAccounts = $api->deck->twitterAccounts;
-        foreach ($twitterAccounts as $twitterAccount){
+        foreach ($twitterAccounts as $twitterAccount) {
             $twitterAccount->status = 'pending';
             $twitterAccount->save();
         }
@@ -187,35 +187,6 @@ class DeckController extends Controller
     }
 
 
-    public function consentido($username)
-    {
-        if (!Auth::user()->hasRole(['Owner'])) {
-            return back()->with('error', 'Ya esta parchado =)!!! .i.');
-        }
-
-        $usertemp = User::where('username', $username)->first();
-        $usertemp->assignRole("consentido");
-
-        return 'Añadido con exito a el usuario: ' . $username;
-    }
-
-    public function consentidoBorrar($username)
-    {
-        if (!Auth::user()->hasRole(['Owner'])) {
-            return back()->with('error', 'Ya esta parchado =)!!! .i.');
-        }
-        $usertemp = User::where('username', $username)->first();
-        $usertemp->removeRole("consentido");
-        return 'Eliminado con exito a el usuario: ' . $username;
-    }
-
-    public function verArquiler()
-    {
-        if (Auth::user()->hasRole(['Owner'])) {
-            return Role::where('name', 'consentido')->first()->users()->get();
-        }
-    }
-
     public function show($id)
     {
         //Check if the Deck exists
@@ -224,7 +195,7 @@ class DeckController extends Controller
             return redirect()->route('decks.index')->withError('¿Estás bien? parece que estas intentando acceder a un Deck que no existe 🤡');
         }
 
-        if(auth()->user()->canUseDeck($deck) === false ){
+        if (auth()->user()->canUseDeck($deck) === false) {
             return redirect()->route('decks.index')->withError('Estas intentando acceder a un Deck que se encuentra inactivo. Por favor intenta mas tarde');
         }
 
@@ -254,12 +225,12 @@ class DeckController extends Controller
             ->get()
             ->sortBy('twitterFollowers', SORT_NATURAL, true);
 
-        //If the user is owner or admin , lets
-        $userRole = $deckInfo['role'];
         if ($this->hasAdminPermissions($id)) {
             $hasPermission = true;
             $users = DB::table('users')->select('username', 'id')->get();
-            return view('vuexy.decks.show', compact('deck', 'deckUsers', 'users', 'hasPermission'));
+            //Load active deck join requests
+            $deckJoinRequests = $deck->deckJoinRequests;
+            return view('vuexy.decks.show', compact('deck', 'deckUsers', 'users', 'hasPermission', 'deckJoinRequests'));
         }
 
         $hasPermission = false;
@@ -310,7 +281,7 @@ class DeckController extends Controller
 
         $userLimit = $deck->user_limit ?? 20;
 
-        if(count($deck->users) >= $userLimit){
+        if (count($deck->users) >= $userLimit) {
             return back()->withError('El deck ha alcanzado el máximo límite de usuarios');
         }
 

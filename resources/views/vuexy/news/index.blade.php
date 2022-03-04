@@ -22,10 +22,15 @@
                     Crear nueva noticia
                 </button>
 
-                <button type="button" class="btn btn-primary brtwaves-effect waves-float waves-light "
+                <button type="button" class="btn btn-primary brtwaves-effect waves-float waves-light me-1"
                         data-bs-toggle="modal"
                         data-bs-target="#editDeckModal">
                     Configuración global del Deck
+                </button>
+                <button type="button" class="btn btn-primary brtwaves-effect waves-float waves-light "
+                        data-bs-toggle="modal"
+                        data-bs-target="#ApiModal">
+                    Editar API de catálogos
                 </button>
             </div>
 
@@ -199,6 +204,59 @@
                 </div>
             </div>
             <!--/ rt master modal  -->
+
+
+            <!-- add new api modal -->
+            <div class="modal fade" id="ApiModal" tabindex="-1" aria-labelledby="addNewCardTitle" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-transparent">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body px-sm-5 mx-50 pb-5">
+                            <h1 class="text-center mb-1" id="addNewCardTitle">Api de catalogos</h1>
+                            <p class="text-center">Usada para la verificación de cuentas</p>
+
+                            <!-- form -->
+                            <form class="row gy-1 gx-2 mt-75" method="POST"
+                                  action="{{route('catalogApi.store')}}">
+                                @csrf
+
+                                <div class="col-12">
+                                    <label class="form-label" for="key">API Key</label>
+                                    <div class="input-group input-group-merge">
+                                        <input id="key" name="key"
+                                               class="form-control" type="text"
+                                               placeholder="API key de app Twitter"
+                                               required
+                                        />
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="secret">API Secret</label>
+                                    <div class="input-group input-group-merge">
+                                        <input id="secret" name="secret"
+                                               class="form-control" type="text"
+                                               placeholder="API secret de app Twitter"
+                                               required
+                                        />
+                                    </div>
+                                </div>
+                                <div class="col-12 text-center">
+                                    <button type="submit" class="btn btn-primary me-1 mt-1">Guardar API</button>
+                                    <button type="reset" class="btn btn-outline-secondary mt-1" data-bs-dismiss="modal"
+                                            aria-label="Close">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--/ add new card modal  -->
+
+
             <!-- TERMINA LA SECCIÓN DE LOS MODALES-->
 
         @endif

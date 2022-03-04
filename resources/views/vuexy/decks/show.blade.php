@@ -48,6 +48,13 @@
                                     <i data-feather="user-plus"></i>
                                     Agregar usuario
                                 </button>
+
+                                <button type="button" class="btn btn-primary btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#showDeckJoinRequestModal">
+                                    <i data-feather="user-plus"></i>
+                                    Ver peticiones
+                                </button>
                             </div>
                         @endif
                     </div>
@@ -207,6 +214,53 @@
             </div>
         </div>
         <!--/ add new USER modal  -->
+        <!-- show deck catalog  -->
+        <div class="modal fade" id="showDeckJoinRequestModal" tabindex="-1" aria-labelledby="addNewCardTitle"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-transparent">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body px-sm-5 mx-50 pb-5">
+                        <h1 class="text-center mb-3" id="addNewCardTitle">Solicitudes de ingreso</h1>
+                        @foreach($deckJoinRequests as $deckJoinRequest)
+                            <div class="d-flex justify-content-between mb-2 align-items-center">
+                                <div>
+                                    <i data-feather="user"></i> {{$deckJoinRequest->username}}
+                                    - <a
+                                        href="http://twitter.com/{{$deckJoinRequest->twitter_account}}">{{'@'.$deckJoinRequest->twitter_account}}</a>
+                                    - <i data-feather="twitter"></i>
+                                    {{$deckJoinRequest->twitter_followers}} followers
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-primary btn-sm"
+                                            onclick="fillUsername('{{$deckJoinRequest->username}}')">
+                                        <i data-feather="check"></i>
+                                        Aceptar ingreso
+                                    </button>
+                                    <form
+                                        class="d-inline"
+                                        method="POST"
+                                        action="{{route('deckJoinRequests.destroy',['deckJoinRequest'=>$deckJoinRequest->id])}}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i data-feather="x"></i>
+                                            Eliminar petición
+                                        </button>
+
+                                    </form>
+
+                                </div>
+                            </div>
+                        @endforeach
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--/show deck catalog  -->
     @endif
     <!-- Make RT Modal -->
     <div class="modal fade" id="RTModal" tabindex="-1" aria-hidden="true">
@@ -319,6 +373,19 @@
     <!-- TERMINA LA SECCIÓN DE LOS MODALES-->
 
     <script>
+
+        function fillUsername(username) {
+            let showDeckJoinRequestModal = bootstrap.Modal.getInstance((document.getElementById('showDeckJoinRequestModal')));
+            showDeckJoinRequestModal.hide();
+
+            let addUserModal = bootstrap.Modal.getInstance((document.getElementById('addUserModal')));
+            if (addUserModal === null) {
+                addUserModal = new bootstrap.Modal(document.getElementById('addUserModal'));
+            }
+            addUserModal.show();
+
+            document.getElementById('user_username').value = username;
+        }
 
         function openTwitterUrl(twitterUsername) {
             window.open('https://twitter.com/' + twitterUsername, '_blank');
