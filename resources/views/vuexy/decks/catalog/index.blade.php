@@ -115,7 +115,8 @@
                                 </form>
 
                                 <a class="btn btn-success me-1 waves-effect waves-float waves-light"
-                                   href="{{'https://api.whatsapp.com/send/?phone='.$deck->telegram_username.'&text=Hola,%20quiero%20unirme%20a%20tu%20deck'}}" target="_blank">
+                                   href="{{'https://api.whatsapp.com/send/?phone='.$deck->telegram_username.'&text=Hola,%20quiero%20unirme%20a%20tu%20deck    '}}"
+                                   target="_blank">
                                     <i data-feather="send"></i>
                                     Escribir al Owner
                                 </a>

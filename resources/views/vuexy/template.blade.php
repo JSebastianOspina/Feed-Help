@@ -328,7 +328,7 @@
             <li class=" nav-item {{ Route::currentRouteName() === 'decks.catalog' ? 'active' : ''}}"><a
                     class="d-flex align-items-center" href="{{route('decks.catalog')}}"><i
                         data-feather="book-open"></i><span class="menu-title text-truncate"
-                                                         >Catálogo</span></a>
+                    >🔥 Catálogo 🔥</span></a>
             </li>
 
 
