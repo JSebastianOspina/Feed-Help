@@ -35,7 +35,7 @@ class DeckJoinRequestController extends Controller
         //Generate oauth_token
         $OAUTH_CALLBACK = env('TWITTER_CALLBACK_URL', 'https://www.feed-help.de/callback') . '/catalog';
 
-        dd($$OAUTH_CALLBACK);
+        dd($OAUTH_CALLBACK);
         $request_token = $connection->oauth('oauth/request_token', array('oauth_callback' => $OAUTH_CALLBACK));
 
         //Save oauth_token and oauth_token_secret for authenticating the request later
