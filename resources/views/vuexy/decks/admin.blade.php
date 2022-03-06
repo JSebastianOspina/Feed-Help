@@ -288,7 +288,7 @@
                                     <label class="form-label" for="rt_minutes">Minutos para RT:</label>
                                     <input type="number" class="form-control" name="rt_minutes" id="rt_minutes"
                                            value="{{$deck->rt_minutes}}"
-                                           min="60" required {{$canEditDeck === false ? 'readonly': ''}}
+                                           min="60" required
                                     >
                                 </div>
                                 <div class="col-12 col-md-6">
@@ -296,7 +296,7 @@
                                     <input type="number" class="form-control" name="delete_minutes"
                                            id="delete_minutes"
                                            value="{{$deck->delete_minutes}}" required
-                                           step="1" min="10" {{$canEditDeck === false ? 'readonly': ''}}>
+                                           step="1" min="10" {{--{{$canEditDeck === false ? 'readonly': ''}}--}}>
                                 </div>
                                 <div class="col-12 col-md-6">
                                     <label class="form-label" for="whatsapp_group_url">URL grupo Whatsapp</label>
@@ -322,7 +322,7 @@
                                            id="min_followers"
                                            placeholder="30 para 30k seguidores"
                                            value="{{$deck->min_followers}}"
-                                           min="0" {{$canEditDeck === false ? 'readonly': ''}}>
+                                           min="0" >
                                 </div>
                                 <div class="col-12 col-md-6">
                                     <label class="form-label" for="enabled">Estado del Deck</label>
